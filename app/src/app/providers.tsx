@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  RainbowKitProvider,
-  darkTheme,
-  getDefaultConfig,
-} from "@rainbow-me/rainbowkit";
+import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
@@ -32,11 +28,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          theme={darkTheme({
-            accentColor: "#22CC02",
-          })}
-        >
+        <RainbowKitProvider>
           <ApolloProvider client={apolloClient}>{children}</ApolloProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
