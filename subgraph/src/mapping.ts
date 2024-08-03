@@ -18,6 +18,8 @@ export function handleCreateRegistry(event: CreateRegistryEvent): void {
     if (!directory) {
       directory = new Directory(id);
       const tokenId = contract.getTokenIdFromPath(path);
+      directory.path = path;
+      directory.name = segments[i];
       directory.tokenId = tokenId;
       directory.tokenBountAccount = contract.getTokenBoundAccountFromTokenId(
         tokenId

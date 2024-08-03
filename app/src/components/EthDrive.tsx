@@ -30,17 +30,11 @@ import { gql, useQuery } from "@apollo/client";
 import Link from "next/link";
 import Image from "next/image";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { Directory as DirectoryType } from "@/types/directory";
+
+import { Directory } from "@/components/Directory";
 
 const MAX_DEPTH = 5;
-
-interface Directory {
-  id: string;
-  tokenId: string;
-  tokenBountAccount: string;
-  holder: string;
-  subdirectories: Directory[];
-  depth: number;
-}
 
 export function EthDrive({ path }: { path: string }) {
   const segments = path.split("/").filter((segment) => segment);
@@ -51,7 +45,7 @@ export function EthDrive({ path }: { path: string }) {
   const { disconnect } = useDisconnect();
 
   const { data } = useQuery(gql(buildRecursiveDirectoryQuery(MAX_DEPTH)));
-  const [directories, setDirectories] = useState<Directory[]>([]);
+  const [directories, setDirectries] = useState<DirectoryType[]>([]);
   const [directoryName, setDirectoryName] = useState("");
 
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
@@ -59,6 +53,7 @@ export function EthDrive({ path }: { path: string }) {
 
   useEffect(() => {
     if (data) {
+      setDirectries(data.directories);
     }
   }, [data]);
 
@@ -102,7 +97,15 @@ export function EthDrive({ path }: { path: string }) {
 
       <div className="flex flex-grow overflow-hidden">
         <div className="w-64 border-r">
-          <div className="h-full p-4"></div>
+          <div className="h-full p-4">
+            {directories.map((directory) => (
+              <Directory
+                key={directory.id}
+                directory={directory}
+                onSelect={() => {}}
+              />
+            ))}
+          </div>
         </div>
 
         <ScrollArea className="p-4">
@@ -118,7 +121,7 @@ export function EthDrive({ path }: { path: string }) {
               {segments.map((segment, i) => {
                 const href = "/" + segments.slice(0, i + 1).join("/");
                 return (
-                  <React.Fragment key={i}>
+                  <React.Fragment key={`breadcrumb_${i}`}>
                     <BreadcrumbSeparator>/</BreadcrumbSeparator>
                     <BreadcrumbItem>
                       {i < segments.length - 1 ? (

@@ -1,4 +1,8 @@
-export function buildRecursiveDirectoryQuery(maxDepth: number) {
+export function buildRecursiveDirectoryQuery(
+  maxDepth: number,
+  id?: string,
+  holder?: string
+) {
   function generateSubdirectoryFields(
     currentDepth: number,
     maxDepth: number
@@ -6,19 +10,42 @@ export function buildRecursiveDirectoryQuery(maxDepth: number) {
     if (currentDepth > maxDepth) {
       return "";
     }
+
+    // Only include where clause if holder is defined
+    const subdirectoryFilter = holder ? `where: { holder: "${holder}" }` : "";
+
     return `
-        subdirectories {
+        subdirectories${subdirectoryFilter ? `(${subdirectoryFilter})` : ""} {
           id
+          name
+          tokenId
+          tokenBountAccount
+          holder
           depth
           ${generateSubdirectoryFields(currentDepth + 1, maxDepth)}
         }
       `;
   }
 
+  // Only include filters if id, holder, or depth are defined
+  const whereClause = [];
+  if (id) {
+    whereClause.push(`id: "${id}"`);
+  } else {
+    whereClause.push(`depth: 0`);
+  }
+  if (holder) whereClause.push(`holder: "${holder}"`);
+
   const query = `
-      query MyQuery {
-        directories(where: { depth: 0 }) {
+      query RecursiveMyDirectory {
+        directories${
+          whereClause.length ? `(where: { ${whereClause.join(", ")} })` : ""
+        } {
           id
+          name
+          tokenId
+          tokenBountAccount
+          holder
           depth
           ${generateSubdirectoryFields(1, maxDepth)}
         }
