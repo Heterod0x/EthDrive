@@ -8,7 +8,7 @@ schema:
 dataSources:
   - kind: ethereum/contract
     name: EthDrive
-    network: "{{ network }}"
+    network: {{ network }}
     source:
       address: "{{ address }}"
       abi: EthDrive
