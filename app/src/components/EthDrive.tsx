@@ -11,6 +11,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 import { useWriteContract } from "wagmi";
 
@@ -18,6 +27,7 @@ import { ethDriveAbi } from "@/lib/ethdrive/abi";
 import { buildRecursiveDirectoryQuery } from "@/lib/ethdrive/query";
 
 import { gql, useQuery } from "@apollo/client";
+import Link from "next/link";
 
 const MAX_DEPTH = 5;
 
@@ -31,6 +41,8 @@ interface Directory {
 }
 
 export function EthDrive({ path }: { path: string }) {
+  const segments = path.split("/").filter((segment) => segment);
+
   const { writeContract } = useWriteContract();
 
   const { data } = useQuery(gql(buildRecursiveDirectoryQuery(MAX_DEPTH)));
@@ -43,9 +55,11 @@ export function EthDrive({ path }: { path: string }) {
   useEffect(() => {}, [data]);
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between p-4 border-b">
-        <h1 className="text-2xl font-semibold">Drive</h1>
+        <Link href="/">
+          <h1 className="text-2xl font-semibold">EthDrive</h1>
+        </Link>
         <div className="flex items-center space-x-4">
           <Button
             onClick={() => {
@@ -54,22 +68,38 @@ export function EthDrive({ path }: { path: string }) {
           >
             <Plus className="mr-2 h-4 w-4" /> New
           </Button>
-          <User className="h-8 w-8" />
+          <User className="h-8 w-8 cursor-pointer" />
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-64 p-4 border-r overflow-y-auto"></aside>
-
-        <div className="flex-1 p-4 overflow-y-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">
-              {/* /{selectedPath?.join("/")} */}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        </div>
-      </div>
+      <ScrollArea className="p-4">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              {segments.length !== 0 ? (
+                <BreadcrumbLink href="/">Root</BreadcrumbLink>
+              ) : (
+                <BreadcrumbPage>Root</BreadcrumbPage>
+              )}
+            </BreadcrumbItem>
+            {segments.map((segment, i) => {
+              const href = "/" + segments.slice(0, i + 1).join("/");
+              return (
+                <React.Fragment key={i}>
+                  <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    {i < segments.length - 1 ? (
+                      <BreadcrumbLink href={href}>{segment}</BreadcrumbLink>
+                    ) : (
+                      <BreadcrumbPage>{segment}</BreadcrumbPage>
+                    )}
+                  </BreadcrumbItem>
+                </React.Fragment>
+              );
+            })}
+          </BreadcrumbList>
+        </Breadcrumb>
+      </ScrollArea>
 
       <Dialog
         open={isCreateDirectoryModalOpen}
