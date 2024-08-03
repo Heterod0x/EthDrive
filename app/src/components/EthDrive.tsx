@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Plus, User } from "lucide-react";
+import { Folder, Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,7 +15,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
@@ -33,6 +32,7 @@ import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { Directory as DirectoryType } from "@/types/directory";
 
 import { Directory } from "@/components/Directory";
+import { Card } from "@/components/ui/card";
 
 const MAX_DEPTH = 5;
 
@@ -44,14 +44,17 @@ export function EthDrive({ path }: { path: string }) {
 
   const { data } = useQuery(gql(buildRecursiveDirectoryQuery(MAX_DEPTH)));
   const [directories, setDirectries] = useState<DirectoryType[]>([]);
-  const [directoryName, setDirectoryName] = useState("");
-  const [selectedDirectoryPath, setSelectedDirectoryPath] = useState("");
+  const [selectedDirectory, setSelectedDirectory] = useState<DirectoryType>();
   const segments = useMemo(() => {
-    return selectedDirectoryPath.split("/").filter((segment) => segment);
-  }, [selectedDirectoryPath]);
+    if (!selectedDirectory) {
+      return [];
+    }
+    return selectedDirectory.path.split("/").filter((segment) => segment);
+  }, [selectedDirectory]);
 
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
     useState(false);
+  const [createDirectoryName, setCreateDirectoryName] = useState("");
 
   useEffect(() => {
     if (data) {
@@ -104,27 +107,45 @@ export function EthDrive({ path }: { path: string }) {
               <Directory
                 key={directory.path}
                 directory={directory}
-                onSelected={setSelectedDirectoryPath}
+                onSelected={setSelectedDirectory}
               />
             ))}
           </div>
         </div>
 
-        <ScrollArea className="p-4">
-          <Breadcrumb>
-            <BreadcrumbList>
-              {segments.map((segment, i) => {
-                return (
-                  <React.Fragment key={`breadcrumb_${i}`}>
-                    <BreadcrumbSeparator>/</BreadcrumbSeparator>
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>{segment}</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </React.Fragment>
-                );
-              })}
-            </BreadcrumbList>
-          </Breadcrumb>
+        <ScrollArea className="p-4 w-full">
+          <div className="flex justify-between items-center mb-4">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                {segments.map((segment, i) => {
+                  return (
+                    <React.Fragment key={`breadcrumb_${i}`}>
+                      {i > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}
+                      <BreadcrumbItem>
+                        <BreadcrumbPage>{segment}</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </React.Fragment>
+                  );
+                })}
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+          <div>
+            {(selectedDirectory
+              ? selectedDirectory.subdirectories
+              : directories
+            ).map((directory) => (
+              <Card
+                key={directory.path}
+                className="flex items-center p-2 cursor-pointer w-full mb-2"
+                onClick={() => setSelectedDirectory(directory)}
+              >
+                <Folder className="h-4 w-4 mr-2" />
+                <span>{directory.name}</span>
+              </Card>
+            ))}
+          </div>
         </ScrollArea>
       </div>
 
@@ -138,10 +159,8 @@ export function EthDrive({ path }: { path: string }) {
           </DialogHeader>
           <Input
             placeholder="Enter directory name"
-            value={directoryName}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setDirectoryName(e.target.value)
-            }
+            value={createDirectoryName}
+            onChange={(e) => setCreateDirectoryName(e.target.value)}
           />
           <DialogFooter>
             <Button
@@ -156,7 +175,7 @@ export function EthDrive({ path }: { path: string }) {
                   abi: ethDriveAbi,
                   address: "0x889F47AA12e02C1FC8a3f313Ac8f5e8BbCD9EAa5",
                   functionName: "createDirectory",
-                  args: [directoryName],
+                  args: [createDirectoryName],
                 });
               }}
             >

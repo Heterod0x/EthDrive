@@ -6,7 +6,7 @@ import { useState } from "react";
 
 interface DirectoryProps {
   directory: DirectoryType;
-  onSelected: (path: string) => void;
+  onSelected: (directory: DirectoryType) => void;
 }
 
 export function Directory({ directory, onSelected }: DirectoryProps) {
@@ -20,7 +20,7 @@ export function Directory({ directory, onSelected }: DirectoryProps) {
   };
 
   const handleDirectoryClick = () => {
-    onSelected(directory.path);
+    onSelected(directory);
   };
 
   return (
