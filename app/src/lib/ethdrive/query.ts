@@ -16,7 +16,7 @@ export function buildRecursiveDirectoryQuery(
 
     return `
         subdirectories${subdirectoryFilter ? `(${subdirectoryFilter})` : ""} {
-          id
+          path
           name
           tokenId
           tokenBountAccount
@@ -41,7 +41,7 @@ export function buildRecursiveDirectoryQuery(
         directories${
           whereClause.length ? `(where: { ${whereClause.join(", ")} })` : ""
         } {
-          id
+          path
           name
           tokenId
           tokenBountAccount

@@ -1,5 +1,5 @@
 export interface Directory {
-  id: string;
+  path: string;
   name: string;
   tokenId: string;
   tokenBountAccount: string;

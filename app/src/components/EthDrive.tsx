@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,8 +37,6 @@ import { Directory } from "@/components/Directory";
 const MAX_DEPTH = 5;
 
 export function EthDrive({ path }: { path: string }) {
-  const segments = path.split("/").filter((segment) => segment);
-
   const { writeContract } = useWriteContract();
   const { isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
@@ -47,6 +45,10 @@ export function EthDrive({ path }: { path: string }) {
   const { data } = useQuery(gql(buildRecursiveDirectoryQuery(MAX_DEPTH)));
   const [directories, setDirectries] = useState<DirectoryType[]>([]);
   const [directoryName, setDirectoryName] = useState("");
+  const [selectedDirectoryPath, setSelectedDirectoryPath] = useState("");
+  const segments = useMemo(() => {
+    return selectedDirectoryPath.split("/").filter((segment) => segment);
+  }, [selectedDirectoryPath]);
 
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
     useState(false);
@@ -100,9 +102,9 @@ export function EthDrive({ path }: { path: string }) {
           <div className="h-full p-4">
             {directories.map((directory) => (
               <Directory
-                key={directory.id}
+                key={directory.path}
                 directory={directory}
-                onSelect={() => {}}
+                onSelected={setSelectedDirectoryPath}
               />
             ))}
           </div>
@@ -111,24 +113,12 @@ export function EthDrive({ path }: { path: string }) {
         <ScrollArea className="p-4">
           <Breadcrumb>
             <BreadcrumbList>
-              <BreadcrumbItem>
-                {segments.length !== 0 ? (
-                  <BreadcrumbLink href="/">Root</BreadcrumbLink>
-                ) : (
-                  <BreadcrumbPage>Root</BreadcrumbPage>
-                )}
-              </BreadcrumbItem>
               {segments.map((segment, i) => {
-                const href = "/" + segments.slice(0, i + 1).join("/");
                 return (
                   <React.Fragment key={`breadcrumb_${i}`}>
                     <BreadcrumbSeparator>/</BreadcrumbSeparator>
                     <BreadcrumbItem>
-                      {i < segments.length - 1 ? (
-                        <BreadcrumbLink href={href}>{segment}</BreadcrumbLink>
-                      ) : (
-                        <BreadcrumbPage>{segment}</BreadcrumbPage>
-                      )}
+                      <BreadcrumbPage>{segment}</BreadcrumbPage>
                     </BreadcrumbItem>
                   </React.Fragment>
                 );

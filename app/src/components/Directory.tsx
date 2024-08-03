@@ -4,36 +4,40 @@ import { Directory as DirectoryType } from "@/types/directory";
 import { ChevronDown, ChevronRight, Folder } from "lucide-react";
 import { useState } from "react";
 
-export function Directory({
-  directory,
-  onSelect,
-}: {
+interface DirectoryProps {
   directory: DirectoryType;
-  onSelect?: (id: string) => void;
-}) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  onSelected: (path: string) => void;
+}
 
-  const handleClick = () => {
+export function Directory({ directory, onSelected }: DirectoryProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleExpandClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (directory.subdirectories.length > 0) {
       setIsExpanded(!isExpanded);
     }
-    if (onSelect) {
-      onSelect(directory.id);
-    }
+  };
+
+  const handleDirectoryClick = () => {
+    onSelected(directory.path);
   };
 
   return (
     <div style={{ paddingLeft: `${directory.depth * 16}px` }}>
       <div
         className="flex items-center py-1 cursor-pointer hover:bg-gray-100 rounded"
-        onClick={handleClick}
+        onClick={handleDirectoryClick}
       >
-        {directory.subdirectories.length > 0 &&
-          (isExpanded ? (
-            <ChevronDown className="w-4 h-4 mr-1" />
-          ) : (
-            <ChevronRight className="w-4 h-4 mr-1" />
-          ))}
+        {directory.subdirectories.length > 0 && (
+          <span onClick={handleExpandClick}>
+            {isExpanded ? (
+              <ChevronDown className="w-4 h-4 mr-1" />
+            ) : (
+              <ChevronRight className="w-4 h-4 mr-1" />
+            )}
+          </span>
+        )}
         <Folder className="w-4 h-4 mr-2" />
         <span className="text-sm">{directory.name}</span>
       </div>
@@ -41,9 +45,9 @@ export function Directory({
         <div>
           {directory.subdirectories.map((subdirectory) => (
             <Directory
-              key={subdirectory.id}
+              key={subdirectory.path}
               directory={subdirectory}
-              onSelect={onSelect}
+              onSelected={onSelected}
             />
           ))}
         </div>
