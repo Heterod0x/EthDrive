@@ -1,13 +1,11 @@
-# Sample Hardhat Project
+# EthDrive Contracts
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+## References
 
-Try running some of the following tasks:
+### Deployed ERC6551 Registry
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.ts
-```
+https://docs.tokenbound.org/contracts/deployments
+
+### ERC6551 Registry Deployment Tool
+
+https://tokenbound-v3-deployer.vercel.app/

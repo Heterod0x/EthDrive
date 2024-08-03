@@ -1,10 +1,16 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
-import { parseEther } from "viem";
+import { erc6551RegistryAddress } from "../../config";
 
-const EthDriveModule = buildModule("LockModule", (m) => {
+const EthDriveModule = buildModule("EthDriveModule", (m) => {
   const deployer = m.getAccount(0);
 
-  const ethDrive = m.contract("EthDrive", [deployer]);
+  const implementation = m.contract("ERC6551Account");
+
+  const ethDrive = m.contract("EthDrive", [
+    deployer,
+    erc6551RegistryAddress,
+    implementation,
+  ]);
 
   return { ethDrive };
 });

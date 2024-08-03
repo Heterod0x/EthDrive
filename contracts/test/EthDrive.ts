@@ -1,14 +1,21 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
 import hre from "hardhat";
-import { getAddress } from "viem";
+import { getAddress, hashMessage } from "viem";
+import { erc6551RegistryAddress } from "../config";
 
 describe("EthDrive", function () {
   async function deployEthDriveFixture() {
     const [owner, otherAccount] = await hre.viem.getWalletClients();
 
+    const erc6551AccountImplementation = await hre.viem.deployContract(
+      "ERC6551Account"
+    );
+
     const ethDrive = await hre.viem.deployContract("EthDrive", [
       owner.account.address,
+      erc6551RegistryAddress,
+      erc6551AccountImplementation.address,
     ]);
 
     const publicClient = await hre.viem.getPublicClient();
@@ -36,15 +43,11 @@ describe("EthDrive", function () {
       const { ethDrive, owner } = await loadFixture(deployEthDriveFixture);
 
       const directoryStrings = ["folder1", "folder2"];
-      const tokenId = await ethDrive.write.createDirectory([directoryStrings]);
+      await ethDrive.write.createDirectory([directoryStrings]);
 
-      // Ensure the directory is registered
-      const path = directoryStrings.join("/");
-
-      // Fetch the token ID using the getTokenIdFromPath function
+      const path = await ethDrive.read.encodeDirectoryPath([directoryStrings]);
       const fetchedTokenId = await ethDrive.read.getTokenIdFromPath([path]);
 
-      // Ensure the NFT was minted with the correct tokenId
       expect(await ethDrive.read.ownerOf([fetchedTokenId])).to.equal(
         getAddress(owner.account.address)
       );
@@ -69,6 +72,35 @@ describe("EthDrive", function () {
       await expect(
         ethDrive.write.createDirectory([invalidDirectoryStrings])
       ).to.be.rejectedWith("EthDrive: Invalid directory strings");
+    });
+  });
+
+  describe("ERC-6551 Integration", function () {
+    it("Should create a token-bound account and check isValidSigner", async function () {
+      const { ethDrive, owner } = await loadFixture(deployEthDriveFixture);
+
+      const directoryStrings = ["folder1", "folder2"];
+      await ethDrive.write.createDirectory([directoryStrings]);
+      const path = await ethDrive.read.encodeDirectoryPath([directoryStrings]);
+      const tokenId = await ethDrive.read.getTokenIdFromPath([path]);
+
+      const account = await ethDrive.read.getAccount([tokenId]);
+
+      const erc6551Account = await hre.viem.getContractAt(
+        "ERC6551Account",
+        account
+      );
+
+      const message = "Hello, world!";
+      const messageHash = hashMessage(message);
+      const signature = await owner.signMessage({ message });
+
+      const magicValue = await erc6551Account.read.isValidSignature([
+        messageHash,
+        signature,
+      ]);
+
+      expect(magicValue).to.equal("0x1626ba7e");
     });
   });
 });

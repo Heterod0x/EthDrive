@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "./interfaces/IERC6551Registry.sol";
+
 contract EthDrive is ERC721, Ownable {
     event CreateRegistry(
         address indexed owner,
@@ -12,10 +14,17 @@ contract EthDrive is ERC721, Ownable {
     );
 
     mapping(string => bool) public isCreated;
+    address public erc6551Registry;
+    address public accountImplementaton;
 
     constructor(
-        address initialOwner
-    ) ERC721("EthDrive", "EDRV") Ownable(initialOwner) {}
+        address initialOwner,
+        address erc6551Registry_,
+        address accountImplementaton_
+    ) ERC721("EthDrive", "EDRV") Ownable(initialOwner) {
+        erc6551Registry = erc6551Registry_;
+        accountImplementaton = accountImplementaton_;
+    }
 
     function createDirectory(
         string[] memory directoryStrings
@@ -32,6 +41,13 @@ contract EthDrive is ERC721, Ownable {
         isCreated[path] = true;
 
         _mint(msg.sender, tokenId);
+        IERC6551Registry(erc6551Registry).createAccount(
+            accountImplementaton,
+            "",
+            block.chainid,
+            address(this),
+            tokenId
+        );
 
         return tokenId;
     }
@@ -69,5 +85,16 @@ contract EthDrive is ERC721, Ownable {
             }
         }
         return true;
+    }
+
+    function getAccount(uint256 tokenId) public view returns (address) {
+        return
+            IERC6551Registry(erc6551Registry).account(
+                accountImplementaton,
+                "",
+                block.chainid,
+                address(this),
+                tokenId
+            );
     }
 }
