@@ -305,9 +305,9 @@
   {
     "inputs": [
       {
-        "internalType": "string[]",
-        "name": "directoryStrings",
-        "type": "string[]"
+        "internalType": "string",
+        "name": "path",
+        "type": "string"
       }
     ],
     "name": "createDirectory",
@@ -445,25 +445,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string[]",
-        "name": "directoryStrings",
-        "type": "string[]"
-      }
-    ],
-    "name": "isValidDirectoryStrings",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "pure",
     "type": "function"
   },
   {

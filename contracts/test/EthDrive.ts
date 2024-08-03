@@ -44,13 +44,11 @@ describe("EthDrive", function () {
     it("Should create a directory and mint an NFT", async function () {
       const { ethDrive, owner } = await loadFixture(deployEthDriveFixture);
 
-      const directoryStrings = ["folder1", "folder2"];
-      await ethDrive.write.createDirectory([directoryStrings]);
+      const path = "folder1/folder2";
+      await ethDrive.write.createDirectory([path]);
+      const tokenId = await ethDrive.read.getTokenIdFromPath([path]);
 
-      const path = await ethDrive.read.encodeDirectoryPath([directoryStrings]);
-      const fetchedTokenId = await ethDrive.read.getTokenIdFromPath([path]);
-
-      expect(await ethDrive.read.ownerOf([fetchedTokenId])).to.equal(
+      expect(await ethDrive.read.ownerOf([tokenId])).to.equal(
         getAddress(owner.account.address)
       );
     });
@@ -58,22 +56,12 @@ describe("EthDrive", function () {
     it("Should revert if the directory already exists", async function () {
       const { ethDrive } = await loadFixture(deployEthDriveFixture);
 
-      const directoryStrings = ["folder1", "folder2"];
-      await ethDrive.write.createDirectory([directoryStrings]);
+      const path = "folder1/folder2";
+      await ethDrive.write.createDirectory([path]);
 
-      await expect(
-        ethDrive.write.createDirectory([directoryStrings])
-      ).to.be.rejectedWith("EthDrive: Directory already created");
-    });
-
-    it("Should revert if a directory contains '/' character", async function () {
-      const { ethDrive } = await loadFixture(deployEthDriveFixture);
-
-      const invalidDirectoryStrings = ["folder1", "inva/lid"];
-
-      await expect(
-        ethDrive.write.createDirectory([invalidDirectoryStrings])
-      ).to.be.rejectedWith("EthDrive: Invalid directory strings");
+      await expect(ethDrive.write.createDirectory([path])).to.be.rejectedWith(
+        "EthDrive: Directory already created"
+      );
     });
   });
 
@@ -81,9 +69,8 @@ describe("EthDrive", function () {
     it("Should create a token-bound account and check isValidSigner", async function () {
       const { ethDrive, owner } = await loadFixture(deployEthDriveFixture);
 
-      const directoryStrings = ["folder1", "folder2"];
-      await ethDrive.write.createDirectory([directoryStrings]);
-      const path = await ethDrive.read.encodeDirectoryPath([directoryStrings]);
+      const path = "folder1/folder2";
+      await ethDrive.write.createDirectory([path]);
       const tokenId = await ethDrive.read.getTokenIdFromPath([path]);
 
       const account = await ethDrive.read.getTokenBoundAccountFromTokenId([

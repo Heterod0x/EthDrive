@@ -10,6 +10,7 @@ export function handleCreateRegistry(event: CreateRegistryEvent): void {
   const path = event.params.path;
   const segments = path.split("/");
   let parentDirectory: Directory | null = null;
+
   for (let i = 0; i < segments.length; i++) {
     const id = segments.slice(0, i + 1).join("/");
     let directory = Directory.load(id);
@@ -23,6 +24,7 @@ export function handleCreateRegistry(event: CreateRegistryEvent): void {
       );
       directory.holder = contract.ownerOf(tokenId);
       directory.subdirectories = [];
+      directory.depth = i;
     }
 
     if (parentDirectory) {

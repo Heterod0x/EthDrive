@@ -21,12 +21,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
+import { useAccount, useWriteContract } from "wagmi";
+
+import { ethDriveAbi } from "@/lib/ethdrive/abi";
+import { buildRecursiveDirectoryQuery } from "@/lib/ethdrive/query";
+
+import { gql, useQuery } from "@apollo/client";
+
+const MAX_DEPTH = 5;
+
+buildRecursiveDirectoryQuery(10);
 
 interface File {
   id: string;
@@ -41,7 +46,7 @@ interface Directory {
   id: string;
   name: string;
   owner: string;
-  children: Directory[];
+  subdirectories: Directory[];
   files?: File[];
 }
 
@@ -49,45 +54,7 @@ const initialDirectories: Directory = {
   id: "root",
   name: "Root",
   owner: "admin.eth",
-  children: [
-    {
-      id: "1",
-      name: "Base",
-      owner: "consome.eth",
-      children: [
-        {
-          id: "1-1",
-          name: "User",
-          owner: "consome.eth",
-          children: [
-            {
-              id: "1-1-1",
-              name: "consome",
-              owner: "consome.eth",
-              children: [],
-              files: [
-                {
-                  id: "1",
-                  name: "ETH.erc20",
-                  type: "ERC20",
-                  supply: 1000000,
-                  balance: 500000,
-                },
-                {
-                  id: "2",
-                  name: "CryptoKitties.erc721",
-                  type: "ERC721",
-                  image: "cryptokitties.jpg",
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-    { id: "2", name: "Optimism", owner: "op.eth", children: [] },
-    { id: "3", name: "Arbitrum", owner: "arb.eth", children: [] },
-  ],
+  subdirectories: [],
 };
 
 interface DirectoryTreeProps {
@@ -130,7 +97,7 @@ const DirectoryTree: React.FC<DirectoryTreeProps> = ({
           selectedDir === directory.id ? "bg-blue-100" : ""
         }`}
       >
-        {directory.children && directory.children.length > 0 && (
+        {directory.subdirectories && directory.subdirectories.length > 0 && (
           <div onClick={handleToggle}>
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 mr-1" />
@@ -143,8 +110,8 @@ const DirectoryTree: React.FC<DirectoryTreeProps> = ({
         <span>{directory.name}</span>
       </div>
       {isExpanded &&
-        directory.children &&
-        directory.children.map((child) => (
+        directory.subdirectories &&
+        directory.subdirectories.map((child) => (
           <div key={child.id} className="ml-4">
             <DirectoryTree
               directory={child}
@@ -196,7 +163,8 @@ const GoogleDriveUI: React.FC = () => {
   const [directories, setDirectories] = useState<Directory>(initialDirectories);
   const [selectedDirId, setSelectedDirId] = useState<string>("root");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
+    useState<boolean>(false);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState<boolean>(false);
   const [modalType, setModalType] = useState<string>("");
   const [newItemName, setNewItemName] = useState<string>("");
@@ -205,14 +173,22 @@ const GoogleDriveUI: React.FC = () => {
   const [itemsToMove, setItemsToMove] = useState<(File | Directory)[]>([]);
   const [moveTargetId, setMoveTargetId] = useState<string | null>(null);
 
+  const { writeContract } = useWriteContract();
+  const { address } = useAccount();
+
+  const { data } = useQuery(gql(buildRecursiveDirectoryQuery(MAX_DEPTH)), {
+    variables: { holder: address?.toLowerCase() },
+  });
+  console.log("data", data);
+
   const findDirectory = (
     dir: Directory,
     id: string,
     path: string[] = []
   ): { dir: Directory; path: string[] } | null => {
     if (dir.id === id) return { dir, path: [...path, dir.name] };
-    if (dir.children) {
-      for (let child of dir.children) {
+    if (dir.subdirectories) {
+      for (let child of dir.subdirectories) {
         const result = findDirectory(child, id, [...path, dir.name]);
         if (result) return result;
       }
@@ -240,12 +216,15 @@ const GoogleDriveUI: React.FC = () => {
                 id: Date.now().toString(),
                 name: newItemName,
                 owner: "current.eth",
-                children: [],
+                subdirectories: [],
                 files: [],
               };
               return {
                 ...dir,
-                children: [...(dir.children || []), newItem as Directory],
+                subdirectories: [
+                  ...(dir.subdirectories || []),
+                  newItem as Directory,
+                ],
               };
             case "token":
               newItem = {
@@ -268,8 +247,11 @@ const GoogleDriveUI: React.FC = () => {
               return dir;
           }
         }
-        if (dir.children) {
-          return { ...dir, children: dir.children.map(updateDirectories) };
+        if (dir.subdirectories) {
+          return {
+            ...dir,
+            subdirectories: dir.subdirectories.map(updateDirectories),
+          };
         }
         return dir;
       };
@@ -278,7 +260,7 @@ const GoogleDriveUI: React.FC = () => {
       setNewItemName("");
       setNewTokenSupply("");
       setNewNFTImage("");
-      setIsModalOpen(false);
+      setIsCreateDirectoryModalOpen(false);
     }
   };
 
@@ -292,18 +274,18 @@ const GoogleDriveUI: React.FC = () => {
     const moveItems = (dir: Directory): Directory => {
       if (dir.id === moveTargetId) {
         const newFiles = [...(dir.files || [])];
-        const newChildren = [...(dir.children || [])];
+        const newsubdirectories = [...(dir.subdirectories || [])];
         itemsToMove.forEach((item) => {
           if ("type" in item) {
             newFiles.push(item as File);
           } else {
-            newChildren.push(item as Directory);
+            newsubdirectories.push(item as Directory);
           }
         });
-        return { ...dir, files: newFiles, children: newChildren };
+        return { ...dir, files: newFiles, subdirectories: newsubdirectories };
       }
-      if (dir.children) {
-        return { ...dir, children: dir.children.map(moveItems) };
+      if (dir.subdirectories) {
+        return { ...dir, subdirectories: dir.subdirectories.map(moveItems) };
       }
       return dir;
     };
@@ -313,13 +295,13 @@ const GoogleDriveUI: React.FC = () => {
         (file) =>
           !itemsToMove.some((item) => "id" in item && item.id === file.id)
       );
-      const newChildren = (dir.children || [])
+      const newsubdirectories = (dir.subdirectories || [])
         .filter(
           (child) =>
             !itemsToMove.some((item) => "id" in item && item.id === child.id)
         )
         .map(removeItems);
-      return { ...dir, files: newFiles, children: newChildren };
+      return { ...dir, files: newFiles, subdirectories: newsubdirectories };
     };
 
     setDirectories(moveItems(removeItems(directories)));
@@ -351,39 +333,14 @@ const GoogleDriveUI: React.FC = () => {
       <header className="flex items-center justify-between p-4 border-b">
         <h1 className="text-2xl font-semibold">Drive</h1>
         <div className="flex items-center space-x-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" /> New
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                onClick={() => {
-                  setModalType("directory");
-                  setIsModalOpen(true);
-                }}
-              >
-                New Directory
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setModalType("token");
-                  setIsModalOpen(true);
-                }}
-              >
-                New Token
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setModalType("nft");
-                  setIsModalOpen(true);
-                }}
-              >
-                New NFT
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            onClick={() => {
+              setModalType("directory");
+              setIsCreateDirectoryModalOpen(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" /> New
+          </Button>
           <User className="h-8 w-8" />
         </div>
       </header>
@@ -408,7 +365,7 @@ const GoogleDriveUI: React.FC = () => {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {selectedDirectory?.children?.map((subDir) => (
+            {selectedDirectory?.subdirectories?.map((subDir) => (
               <div
                 key={subDir.id}
                 onClick={(e) => handleSelect(subDir.id)}
@@ -473,10 +430,13 @@ const GoogleDriveUI: React.FC = () => {
         )}
       </div>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog
+        open={isCreateDirectoryModalOpen}
+        onOpenChange={setIsCreateDirectoryModalOpen}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New {modalType}</DialogTitle>
+            <DialogTitle>Create Directory</DialogTitle>
           </DialogHeader>
           <Input
             placeholder={`Enter ${modalType} name`}
@@ -485,30 +445,27 @@ const GoogleDriveUI: React.FC = () => {
               setNewItemName(e.target.value)
             }
           />
-          {modalType === "token" && (
-            <Input
-              type="number"
-              placeholder="Enter token supply"
-              value={newTokenSupply}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setNewTokenSupply(e.target.value)
-              }
-            />
-          )}
-          {modalType === "nft" && (
-            <Input
-              placeholder="Enter image file name"
-              value={newNFTImage}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setNewNFTImage(e.target.value)
-              }
-            />
-          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCreateDirectoryModalOpen(false);
+              }}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreateItem}>Create</Button>
+            <Button
+              onClick={() => {
+                writeContract({
+                  abi: ethDriveAbi,
+                  address: "0x889F47AA12e02C1FC8a3f313Ac8f5e8BbCD9EAa5",
+                  functionName: "createDirectory",
+                  args: [newItemName],
+                });
+              }}
+            >
+              Create
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

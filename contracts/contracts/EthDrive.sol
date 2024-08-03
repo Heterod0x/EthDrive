@@ -22,13 +22,7 @@ contract EthDrive is ERC721, Ownable {
         accountImplementaton = accountImplementaton_;
     }
 
-    function createDirectory(string[] memory directoryStrings) public {
-        require(
-            isValidDirectoryStrings(directoryStrings),
-            "EthDrive: Invalid directory strings"
-        );
-
-        string memory path = encodeDirectoryPath(directoryStrings);
+    function createDirectory(string memory path) public {
         uint256 tokenId = getTokenIdFromPath(path);
 
         require(!isCreated[path], "EthDrive: Directory already created");
@@ -65,20 +59,6 @@ contract EthDrive is ERC721, Ownable {
         string memory path
     ) public pure returns (uint256) {
         return uint256(keccak256(abi.encodePacked(path)));
-    }
-
-    function isValidDirectoryStrings(
-        string[] memory directoryStrings
-    ) public pure returns (bool) {
-        for (uint256 i = 0; i < directoryStrings.length; i++) {
-            bytes memory dir = bytes(directoryStrings[i]);
-            for (uint256 j = 0; j < dir.length; j++) {
-                if (dir[j] == "/") {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     function getTokenBoundAccountFromTokenId(
