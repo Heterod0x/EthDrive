@@ -65,3 +65,6 @@ subgraph.yaml
 
 build
 generated
+
+# Docker volume
+data

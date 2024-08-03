@@ -1,29 +1,28 @@
+# prettier-ignore
+
 specVersion: 0.0.2
-description: POAP
-repository: https://github.com/poap-xyz/poap-mainnet-subgraph
+description: EthDrive
+repository: https://github.com/Heterod0x/EthDrive
 schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum/contract
-    name: Poap
-    network: { { network } }
+    name: EthDrive
+    network: "{{ network }}"
     source:
       address: "{{ address }}"
-      abi: Poap
-      startBlock: { { startBlock } }
+      abi: EthDrive
+      startBlock: {{ startBlock }}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
       language: wasm/assemblyscript
       entities:
-        - EventToken
-        - Transfer
+        - EthDrive
       abis:
-        - name: Poap
-          file: ./abis/{{ file }}.json
+        - name: EthDrive
+          file: ./abis/EthDrive.json
       eventHandlers:
-        - event: { { tokenEvent } }
-          handler: handleEventToken
-        - event: Transfer(indexed address,indexed address,indexed uint256)
-          handler: handleTransfer
+        - event: CreateRegistry(string)
+          handler: handleCreateRegistry
       file: ./src/mapping.ts
