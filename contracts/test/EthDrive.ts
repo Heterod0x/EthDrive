@@ -2,25 +2,27 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpe
 import { expect } from "chai";
 import hre from "hardhat";
 import { getAddress, hashMessage } from "viem";
-import { erc6551RegistryAddress } from "../config";
+import { erc4331EntryPointAddress, erc6551RegistryAddress } from "../config";
 
 describe("EthDrive", function () {
   async function deployEthDriveFixture() {
     const [owner, otherAccount] = await hre.viem.getWalletClients();
 
-    const erc6551AccountImplementation = await hre.viem.deployContract(
-      "ERC6551Account"
+    const accountImplementation = await hre.viem.deployContract(
+      "EthDriveAccount",
+      [erc4331EntryPointAddress]
     );
 
     const ethDrive = await hre.viem.deployContract("EthDrive", [
       owner.account.address,
       erc6551RegistryAddress,
-      erc6551AccountImplementation.address,
+      accountImplementation.address,
     ]);
 
     const publicClient = await hre.viem.getPublicClient();
 
     return {
+      accountImplementation,
       ethDrive,
       owner,
       otherAccount,
@@ -86,8 +88,8 @@ describe("EthDrive", function () {
 
       const account = await ethDrive.read.getAccount([tokenId]);
 
-      const erc6551Account = await hre.viem.getContractAt(
-        "ERC6551Account",
+      const ethDriveAccount = await hre.viem.getContractAt(
+        "EthDriveAccount",
         account
       );
 
@@ -95,7 +97,7 @@ describe("EthDrive", function () {
       const messageHash = hashMessage(message);
       const signature = await owner.signMessage({ message });
 
-      const magicValue = await erc6551Account.read.isValidSignature([
+      const magicValue = await ethDriveAccount.read.isValidSignature([
         messageHash,
         signature,
       ]);
