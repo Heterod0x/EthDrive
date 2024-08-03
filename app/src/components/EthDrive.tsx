@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Folder, Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 import {
   Dialog,
   DialogContent,
@@ -20,10 +21,21 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-import { useAccount, useDisconnect, useWriteContract } from "wagmi";
+import {
+  useAccount,
+  useDisconnect,
+  usePublicClient,
+  useWalletClient,
+  useWriteContract,
+  useConfig,
+} from "wagmi";
 
-import { ethDriveAbi } from "@/lib/ethdrive/abi";
-import { buildRecursiveDirectoryQuery } from "@/lib/ethdrive/query";
+import { readContract } from "@wagmi/core";
+
+import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
+
+import { ethDriveAbi } from "@/lib/abi/eth-drive";
+import { buildRecursiveDirectoryQuery } from "@/lib/query";
 
 import { gql, useQuery } from "@apollo/client";
 import Link from "next/link";
@@ -33,14 +45,29 @@ import { Directory as DirectoryType } from "@/types/directory";
 
 import { Directory } from "@/components/Directory";
 import { Card } from "@/components/ui/card";
+import { ethDriveAccountAbi } from "@/lib/abi/eth-drive-account";
+
+import {
+  ethDriveAddress,
+  entryPointAddress,
+  ethDrivePaymasterAddress,
+} from "@/lib/address";
+
+import { request as alchemyRequest } from "@/lib/alchemy";
+import { request as stackupRequest } from "@/lib/stackup";
+import { dummySignature } from "@/lib/constant";
+import { entryPointAbi } from "@/lib/abi/entry-point";
 
 const MAX_DEPTH = 5;
 
 export function EthDrive({ path }: { path: string }) {
+  const config = useConfig();
   const { writeContract } = useWriteContract();
-  const { isConnected } = useAccount();
+  const { isConnected, chainId } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { disconnect } = useDisconnect();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
 
   const { data } = useQuery(gql(buildRecursiveDirectoryQuery(MAX_DEPTH)));
   const [directories, setDirectries] = useState<DirectoryType[]>([]);
@@ -58,6 +85,7 @@ export function EthDrive({ path }: { path: string }) {
 
   useEffect(() => {
     if (data) {
+      console.log("data", data);
       setDirectries(data.directories);
     }
   }, [data]);
@@ -130,6 +158,93 @@ export function EthDrive({ path }: { path: string }) {
                 })}
               </BreadcrumbList>
             </Breadcrumb>
+            {selectedDirectory && (
+              <Button
+                onClick={async () => {
+                  if (!chainId) {
+                    throw new Error("chainId is not defined");
+                  }
+                  if (!walletClient) {
+                    throw new Error("walletClient is not defined");
+                  }
+                  if (!publicClient) {
+                    throw new Error("publicClient is not defined");
+                  }
+                  const sender = selectedDirectory.tokenBountAccount as Address;
+                  const nonce = await readContract(config, {
+                    abi: ethDriveAccountAbi,
+                    address: sender,
+                    functionName: "getNonce",
+                    args: [],
+                  });
+                  // TODO: use actual callData
+                  const callData = encodeFunctionData({
+                    abi: ethDriveAccountAbi,
+                    functionName: "execute",
+                    args: [zeroAddress, BigInt(0), "0x"],
+                  });
+                  const latestBlock = await publicClient.getBlock();
+                  const baseFeePerGas = latestBlock.baseFeePerGas || BigInt(0);
+                  const { result: maxPriorityFeePerGas } = await alchemyRequest(
+                    "eth-sepolia",
+                    "rundler_maxPriorityFeePerGas",
+                    []
+                  );
+
+                  const maxFeePerGas =
+                    baseFeePerGas + BigInt(maxPriorityFeePerGas);
+                  const partialUserOperation = {
+                    sender,
+                    nonce: toHex(nonce),
+                    initCode: "0x",
+                    callData: callData,
+                    maxFeePerGas: toHex(maxFeePerGas),
+                    maxPriorityFeePerGas: maxPriorityFeePerGas,
+                    paymasterAndData: ethDrivePaymasterAddress,
+                    // paymasterAndData: "0x",
+                    signature: dummySignature,
+                  };
+                  const {
+                    result: {
+                      callGasLimit,
+                      preVerificationGas,
+                      verificationGasLimit,
+                    },
+                  } = await alchemyRequest(
+                    "eth-sepolia",
+                    "eth_estimateUserOperationGas",
+                    [partialUserOperation, entryPointAddress]
+                  );
+                  console.log("preVerificationGas", preVerificationGas);
+
+                  const userOperation = {
+                    ...partialUserOperation,
+                    callGasLimit,
+                    preVerificationGas: toHex(49202),
+                    verificationGasLimit,
+                  } as any;
+                  const userOpHash = await readContract(config, {
+                    abi: entryPointAbi,
+                    address: entryPointAddress,
+                    functionName: "getUserOpHash",
+                    args: [userOperation],
+                  });
+                  const signature = await walletClient.signMessage({
+                    message: { raw: userOpHash },
+                  });
+                  userOperation.signature = signature;
+                  console.log("userOperation", userOperation);
+                  const sendUserOperationRes = await alchemyRequest(
+                    "eth-sepolia",
+                    "eth_sendUserOperation",
+                    [userOperation, entryPointAddress]
+                  );
+                  console.log("sendUserOperationRes", sendUserOperationRes);
+                }}
+              >
+                Test
+              </Button>
+            )}
           </div>
           <div>
             {(selectedDirectory
@@ -173,7 +288,7 @@ export function EthDrive({ path }: { path: string }) {
               onClick={() => {
                 writeContract({
                   abi: ethDriveAbi,
-                  address: "0x889F47AA12e02C1FC8a3f313Ac8f5e8BbCD9EAa5",
+                  address: ethDriveAddress,
                   functionName: "createDirectory",
                   args: [createDirectoryName],
                 });

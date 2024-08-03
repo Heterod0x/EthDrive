@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+
+import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
 import "./interfaces/IERC6551Registry.sol";
 
@@ -10,14 +12,16 @@ contract EthDrive is ERC721, Ownable {
     event CreateRegistry(string path);
 
     mapping(string => bool) public isCreated;
+    address public entryPoint;
     address public erc6551Registry;
     address public accountImplementaton;
 
     constructor(
-        address initialOwner,
+        address entryPoint_,
         address erc6551Registry_,
         address accountImplementaton_
-    ) ERC721("EthDrive", "EDRV") Ownable(initialOwner) {
+    ) ERC721("EthDrive", "EDRV") {
+        entryPoint = entryPoint_;
         erc6551Registry = erc6551Registry_;
         accountImplementaton = accountImplementaton_;
     }
@@ -72,5 +76,17 @@ contract EthDrive is ERC721, Ownable {
                 address(this),
                 tokenId
             );
+    }
+
+    function addStake(uint32 unstakeDelaySec) external payable onlyOwner {
+        IEntryPoint(entryPoint).addStake{value: msg.value}(unstakeDelaySec);
+    }
+
+    function unlockStake() external onlyOwner {
+        IEntryPoint(entryPoint).unlockStake();
+    }
+
+    function withdrawStake(address payable withdrawAddress) external onlyOwner {
+        IEntryPoint(entryPoint).withdrawStake(withdrawAddress);
     }
 }
