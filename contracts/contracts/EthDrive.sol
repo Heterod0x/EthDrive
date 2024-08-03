@@ -7,11 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IERC6551Registry.sol";
 
 contract EthDrive is ERC721, Ownable {
-    event CreateRegistry(
-        address indexed owner,
-        uint256 indexed tokenId,
-        string path
-    );
+    event CreateRegistry(string path);
 
     mapping(string => bool) public isCreated;
     address public erc6551Registry;
@@ -26,9 +22,7 @@ contract EthDrive is ERC721, Ownable {
         accountImplementaton = accountImplementaton_;
     }
 
-    function createDirectory(
-        string[] memory directoryStrings
-    ) public returns (uint256) {
+    function createDirectory(string[] memory directoryStrings) public {
         require(
             isValidDirectoryStrings(directoryStrings),
             "EthDrive: Invalid directory strings"
@@ -49,7 +43,7 @@ contract EthDrive is ERC721, Ownable {
             tokenId
         );
 
-        return tokenId;
+        emit CreateRegistry(path);
     }
 
     function encodeDirectoryPath(
@@ -87,7 +81,9 @@ contract EthDrive is ERC721, Ownable {
         return true;
     }
 
-    function getAccount(uint256 tokenId) public view returns (address) {
+    function getTokenBoundAccountFromTokenId(
+        uint256 tokenId
+    ) public view returns (address) {
         return
             IERC6551Registry(erc6551Registry).account(
                 accountImplementaton,

@@ -1,0 +1,7 @@
+type Directory @entity {
+  id: ID!
+  tokenId: BigInt!
+  tokenBountAccount: Bytes!
+  holder: Bytes!
+  subdirectories: [Directory!]!
+}

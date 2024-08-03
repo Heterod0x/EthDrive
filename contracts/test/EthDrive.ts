@@ -86,7 +86,9 @@ describe("EthDrive", function () {
       const path = await ethDrive.read.encodeDirectoryPath([directoryStrings]);
       const tokenId = await ethDrive.read.getTokenIdFromPath([path]);
 
-      const account = await ethDrive.read.getAccount([tokenId]);
+      const account = await ethDrive.read.getTokenBoundAccountFromTokenId([
+        tokenId,
+      ]);
 
       const ethDriveAccount = await hre.viem.getContractAt(
         "EthDriveAccount",

@@ -1,0 +1,28 @@
+# prettier-ignore
+
+specVersion: 0.0.2
+description: EthDrive
+repository: https://github.com/Heterod0x/EthDrive
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: EthDrive
+    network: "{{ network }}"
+    source:
+      address: "{{ address }}"
+      abi: EthDrive
+      startBlock: {{ startBlock }}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - EthDrive
+      abis:
+        - name: EthDrive
+          file: ./abis/EthDrive.json
+      eventHandlers:
+        - event: CreateRegistry(string)
+          handler: handleCreateRegistry
+      file: ./src/mapping.ts
