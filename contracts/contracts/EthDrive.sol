@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IERC6551Registry.sol";
+import "./EthDriveAccount.sol";
 
 contract EthDrive is ERC721, Ownable {
     event CreateRegistry(string path);
@@ -14,27 +15,19 @@ contract EthDrive is ERC721, Ownable {
     address public accountImplementaton;
 
     constructor(
-        address initialOwner,
         address erc6551Registry_,
         address accountImplementaton_
-    ) ERC721("EthDrive", "EDRV") Ownable(initialOwner) {
+    ) ERC721("EthDrive", "EDRV") {
         erc6551Registry = erc6551Registry_;
         accountImplementaton = accountImplementaton_;
     }
 
-    function createDirectory(string[] memory directoryStrings) public {
-        require(
-            isValidDirectoryStrings(directoryStrings),
-            "EthDrive: Invalid directory strings"
-        );
-
-        string memory path = encodeDirectoryPath(directoryStrings);
+    function createDirectory(string memory path) public {
         uint256 tokenId = getTokenIdFromPath(path);
 
         require(!isCreated[path], "EthDrive: Directory already created");
         isCreated[path] = true;
 
-        _mint(msg.sender, tokenId);
         IERC6551Registry(erc6551Registry).createAccount(
             accountImplementaton,
             "",
@@ -42,6 +35,7 @@ contract EthDrive is ERC721, Ownable {
             address(this),
             tokenId
         );
+        _mint(msg.sender, tokenId);
 
         emit CreateRegistry(path);
     }
@@ -67,20 +61,6 @@ contract EthDrive is ERC721, Ownable {
         return uint256(keccak256(abi.encodePacked(path)));
     }
 
-    function isValidDirectoryStrings(
-        string[] memory directoryStrings
-    ) public pure returns (bool) {
-        for (uint256 i = 0; i < directoryStrings.length; i++) {
-            bytes memory dir = bytes(directoryStrings[i]);
-            for (uint256 j = 0; j < dir.length; j++) {
-                if (dir[j] == "/") {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     function getTokenBoundAccountFromTokenId(
         uint256 tokenId
     ) public view returns (address) {
@@ -92,5 +72,23 @@ contract EthDrive is ERC721, Ownable {
                 address(this),
                 tokenId
             );
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override {
+        if (to != address(0)) {
+            address account = IERC6551Registry(erc6551Registry).account(
+                accountImplementaton,
+                "",
+                block.chainid,
+                address(this),
+                tokenId
+            );
+            EthDriveAccount(payable(address(uint160(account)))).cacheOwner(to);
+        }
+        super._beforeTokenTransfer(from, to, tokenId);
     }
 }

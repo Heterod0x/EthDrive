@@ -1,11 +1,13 @@
 {
-  "name": "hardhat-project",
+  "name": "@ethdrive/contracts",
+  "version": "0.0.1",
+  "private": true,
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
     "hardhat": "^2.22.7"
   },
   "dependencies": {
-    "@account-abstraction/contracts": "^0.7.0",
-    "@openzeppelin/contracts": "^5.0.2"
+    "@account-abstraction/contracts": "0.6.0",
+    "@openzeppelin/contracts": "4.2.0"
   }
 }

@@ -1,13 +1,13 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/interfaces/IERC165.sol";
 import "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import "@account-abstraction/contracts/core/BaseAccount.sol";
 import "@account-abstraction/contracts/core/Helpers.sol";
@@ -24,6 +24,7 @@ contract EthDriveAccount is
 {
     IEntryPoint private immutable _entryPoint;
     uint256 private _state;
+    address private _cachedOwner;
 
     constructor(IEntryPoint anEntryPoint) {
         _entryPoint = anEntryPoint;
@@ -34,9 +35,19 @@ contract EthDriveAccount is
     modifier onlyEntryPointOrOwner() {
         require(
             msg.sender == address(entryPoint()) || msg.sender == owner(),
-            "account: not Owner or EntryPoint"
+            "EthDriveAccount: not Owner or EntryPoint"
         );
         _;
+    }
+
+    modifier onlyTokenContract() {
+        (, address tokenContract, ) = token();
+        require(msg.sender == tokenContract, "EthDriveAccount: not token");
+        _;
+    }
+
+    function cacheOwner(address cachedOwner) public onlyTokenContract {
+        _cachedOwner = cachedOwner;
     }
 
     function execute(
@@ -161,12 +172,12 @@ contract EthDriveAccount is
     }
 
     function _validateSignature(
-        PackedUserOperation calldata userOp,
+        UserOperation calldata userOp,
         bytes32 userOpHash
     ) internal virtual override returns (uint256 validationData) {
-        bytes32 hash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
-        if (owner() != ECDSA.recover(hash, userOp.signature))
+        bytes32 hash = ECDSA.toEthSignedMessageHash(userOpHash);
+        if (_cachedOwner != ECDSA.recover(hash, userOp.signature))
             return SIG_VALIDATION_FAILED;
-        return SIG_VALIDATION_SUCCESS;
+        return 0;
     }
 }

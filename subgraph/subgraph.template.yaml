@@ -8,7 +8,7 @@ schema:
 dataSources:
   - kind: ethereum/contract
     name: EthDrive
-    network: "{{ network }}"
+    network: {{ network }}
     source:
       address: "{{ address }}"
       abi: EthDrive
@@ -18,7 +18,7 @@ dataSources:
       apiVersion: 0.0.5
       language: wasm/assemblyscript
       entities:
-        - EthDrive
+        - Directory
       abis:
         - name: EthDrive
           file: ./abis/EthDrive.json
