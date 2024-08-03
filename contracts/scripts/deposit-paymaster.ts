@@ -2,7 +2,7 @@ import hre from "hardhat";
 import { parseEther } from "viem";
 
 async function main() {
-  const ethDrivePaymasterAddress = "0xad237c6505b0c1258709fa19fdcbf6c9d2509235";
+  const ethDrivePaymasterAddress = "0x7f0d42e65c10f57fb70677e23b57bb54251b41af";
   const value = parseEther("0.1");
 
   const ethDrivePaymaster = await hre.viem.getContractAt(

@@ -1,5 +1,4 @@
 import hre from "hardhat";
-import { parseEther } from "viem";
 import { entryPointAddress, erc6551RegistryAddress } from "../config";
 
 async function main() {
@@ -13,7 +12,6 @@ async function main() {
   );
 
   const ethDrive = await hre.viem.deployContract("EthDrive", [
-    entryPointAddress,
     erc6551RegistryAddress,
     ethDriveAccountImplementation.address,
   ]);
@@ -24,11 +22,6 @@ async function main() {
   ]);
 
   console.log("EthDrivePaymaster deployed to:", ethDrivePaymaster.address);
-
-  // const ethDrivePaymasterDepositHash = await ethDrivePaymaster.write.deposit({
-  //   value: parseEther("0.01"),
-  // });
-  // console.log("EthDrivePaymaster deposit hash:", ethDrivePaymasterDepositHash);
 }
 
 main().catch((error) => {

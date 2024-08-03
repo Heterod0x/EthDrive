@@ -53,8 +53,7 @@ import {
   ethDrivePaymasterAddress,
 } from "@/lib/address";
 
-import { request as alchemyRequest } from "@/lib/alchemy";
-import { request as stackupRequest } from "@/lib/stackup";
+import { request } from "@/lib/alchemy";
 import { dummySignature } from "@/lib/constant";
 import { entryPointAbi } from "@/lib/abi/entry-point";
 
@@ -185,12 +184,11 @@ export function EthDrive({ path }: { path: string }) {
                   });
                   const latestBlock = await publicClient.getBlock();
                   const baseFeePerGas = latestBlock.baseFeePerGas || BigInt(0);
-                  const { result: maxPriorityFeePerGas } = await alchemyRequest(
+                  const { result: maxPriorityFeePerGas } = await request(
                     "eth-sepolia",
                     "rundler_maxPriorityFeePerGas",
                     []
                   );
-
                   const maxFeePerGas =
                     baseFeePerGas + BigInt(maxPriorityFeePerGas);
                   const partialUserOperation = {
@@ -201,7 +199,6 @@ export function EthDrive({ path }: { path: string }) {
                     maxFeePerGas: toHex(maxFeePerGas),
                     maxPriorityFeePerGas: maxPriorityFeePerGas,
                     paymasterAndData: ethDrivePaymasterAddress,
-                    // paymasterAndData: "0x",
                     signature: dummySignature,
                   };
                   const {
@@ -210,17 +207,15 @@ export function EthDrive({ path }: { path: string }) {
                       preVerificationGas,
                       verificationGasLimit,
                     },
-                  } = await alchemyRequest(
+                  } = await request(
                     "eth-sepolia",
                     "eth_estimateUserOperationGas",
                     [partialUserOperation, entryPointAddress]
                   );
-                  console.log("preVerificationGas", preVerificationGas);
-
                   const userOperation = {
                     ...partialUserOperation,
                     callGasLimit,
-                    preVerificationGas: toHex(49202),
+                    preVerificationGas,
                     verificationGasLimit,
                   } as any;
                   const userOpHash = await readContract(config, {
@@ -234,7 +229,7 @@ export function EthDrive({ path }: { path: string }) {
                   });
                   userOperation.signature = signature;
                   console.log("userOperation", userOperation);
-                  const sendUserOperationRes = await alchemyRequest(
+                  const sendUserOperationRes = await request(
                     "eth-sepolia",
                     "eth_sendUserOperation",
                     [userOperation, entryPointAddress]

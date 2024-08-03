@@ -4,24 +4,20 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
-
 import "./interfaces/IERC6551Registry.sol";
+import "./EthDriveAccount.sol";
 
 contract EthDrive is ERC721, Ownable {
     event CreateRegistry(string path);
 
     mapping(string => bool) public isCreated;
-    address public entryPoint;
     address public erc6551Registry;
     address public accountImplementaton;
 
     constructor(
-        address entryPoint_,
         address erc6551Registry_,
         address accountImplementaton_
     ) ERC721("EthDrive", "EDRV") {
-        entryPoint = entryPoint_;
         erc6551Registry = erc6551Registry_;
         accountImplementaton = accountImplementaton_;
     }
@@ -32,7 +28,6 @@ contract EthDrive is ERC721, Ownable {
         require(!isCreated[path], "EthDrive: Directory already created");
         isCreated[path] = true;
 
-        _mint(msg.sender, tokenId);
         IERC6551Registry(erc6551Registry).createAccount(
             accountImplementaton,
             "",
@@ -40,6 +35,7 @@ contract EthDrive is ERC721, Ownable {
             address(this),
             tokenId
         );
+        _mint(msg.sender, tokenId);
 
         emit CreateRegistry(path);
     }
@@ -78,15 +74,21 @@ contract EthDrive is ERC721, Ownable {
             );
     }
 
-    function addStake(uint32 unstakeDelaySec) external payable onlyOwner {
-        IEntryPoint(entryPoint).addStake{value: msg.value}(unstakeDelaySec);
-    }
-
-    function unlockStake() external onlyOwner {
-        IEntryPoint(entryPoint).unlockStake();
-    }
-
-    function withdrawStake(address payable withdrawAddress) external onlyOwner {
-        IEntryPoint(entryPoint).withdrawStake(withdrawAddress);
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override {
+        if (to != address(0)) {
+            address account = IERC6551Registry(erc6551Registry).account(
+                accountImplementaton,
+                "",
+                block.chainid,
+                address(this),
+                tokenId
+            );
+            EthDriveAccount(payable(address(uint160(account)))).cacheOwner(to);
+        }
+        super._beforeTokenTransfer(from, to, tokenId);
     }
 }

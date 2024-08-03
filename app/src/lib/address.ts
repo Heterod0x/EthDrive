@@ -1,4 +1,4 @@
 export const entryPointAddress = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
-export const ethDriveAddress = "0x104a39a9efa89ff3987ebf8864d8a2876ccda940";
+export const ethDriveAddress = "0xe0f07ad5be21f4ea0ae0250fddb5b4b865a827ab";
 export const ethDrivePaymasterAddress =
-  "0xad237c6505b0c1258709fa19fdcbf6c9d2509235";
+  "0x7f0d42e65c10f57fb70677e23b57bb54251b41af";

@@ -4,4 +4,4 @@ export const tenderlyVirtualTestnet =
 export const entryPointAddress = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
 export const erc6551RegistryAddress =
   "0x000000006551c19487814612e58FE06813775758";
-export const minimumUnstakeDelay = 86401;
+export const minimumUnstakeDelay = 86400;

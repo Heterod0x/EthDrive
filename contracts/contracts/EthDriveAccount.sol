@@ -14,8 +14,6 @@ import "@account-abstraction/contracts/core/Helpers.sol";
 
 import "./interfaces/IERC6551Account.sol";
 
-import "hardhat/console.sol";
-
 contract EthDriveAccount is
     IERC165,
     IERC1271,
@@ -26,6 +24,7 @@ contract EthDriveAccount is
 {
     IEntryPoint private immutable _entryPoint;
     uint256 private _state;
+    address private _cachedOwner;
 
     constructor(IEntryPoint anEntryPoint) {
         _entryPoint = anEntryPoint;
@@ -36,9 +35,19 @@ contract EthDriveAccount is
     modifier onlyEntryPointOrOwner() {
         require(
             msg.sender == address(entryPoint()) || msg.sender == owner(),
-            "account: not Owner or EntryPoint"
+            "EthDriveAccount: not Owner or EntryPoint"
         );
         _;
+    }
+
+    modifier onlyTokenContract() {
+        (, address tokenContract, ) = token();
+        require(msg.sender == tokenContract, "EthDriveAccount: not token");
+        _;
+    }
+
+    function cacheOwner(address cachedOwner) public onlyTokenContract {
+        _cachedOwner = cachedOwner;
     }
 
     function execute(
@@ -167,7 +176,7 @@ contract EthDriveAccount is
         bytes32 userOpHash
     ) internal virtual override returns (uint256 validationData) {
         bytes32 hash = ECDSA.toEthSignedMessageHash(userOpHash);
-        if (owner() != ECDSA.recover(hash, userOp.signature))
+        if (_cachedOwner != ECDSA.recover(hash, userOp.signature))
             return SIG_VALIDATION_FAILED;
         return 0;
     }
