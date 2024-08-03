@@ -1,6 +1,7 @@
 {
-  "name": "poap-mainnet-subgraph",
-  "license": "UNLICENSED",
+  "name": "@ethdrive/subgraph",
+  "version": "0.0.1",
+  "private": true,
   "scripts": {
     "prepare:sepolia": "mustache config/sepolia.json subgraph.template.yaml > subgraph.yaml",
     "codegen": "graph codegen",

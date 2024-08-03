@@ -1,5 +1,7 @@
 {
-  "name": "hardhat-project",
+  "name": "@ethdrive/contracts",
+  "version": "0.0.1",
+  "private": true,
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
     "hardhat": "^2.22.7"
