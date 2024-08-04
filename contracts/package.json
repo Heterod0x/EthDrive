@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.6",
     "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
+    "@tenderly/hardhat-tenderly": "^2.3.0",
+    "ethers": "^6.13.2",
     "hardhat": "^2.22.7"
   },
   "dependencies": {

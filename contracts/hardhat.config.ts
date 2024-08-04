@@ -1,9 +1,17 @@
 import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
-import { tenderlyVirtualTestnet } from "./shared/rpc";
+import "@nomicfoundation/hardhat-ethers";
+import * as tenderly from "@tenderly/hardhat-tenderly";
+
+import {
+  ethDriveVirtualMainnetChainId,
+  ethDriveVirtualMainnetRPC,
+} from "./shared/tenderly";
 import { defaultSignerPrivateKey } from "./shared/key";
 
 import "./tasks/depositToPaymaster";
+
+tenderly.setup({ automaticVerifications: true });
 
 const accounts = [process.env.PRIVATE_KEY || defaultSignerPrivateKey];
 
@@ -12,14 +20,23 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: tenderlyVirtualTestnet,
+        url: ethDriveVirtualMainnetRPC,
       },
+    },
+    virtual: {
+      chainId: ethDriveVirtualMainnetChainId,
+      url: ethDriveVirtualMainnetRPC,
+      accounts,
     },
     sepolia: {
       chainId: 11155111,
       url: "https://rpc.sepolia.org",
       accounts,
     },
+  },
+  tenderly: {
+    project: "hackathon",
+    username: "taijusanagi",
   },
 };
 

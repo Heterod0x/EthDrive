@@ -1,4 +1,4 @@
-import hre from "hardhat";
+import { ethers, network } from "hardhat";
 import {
   entryPointAddress,
   erc6551RegistryAddress,
@@ -15,19 +15,20 @@ function ensureDirExists(dir: string) {
 
 async function deploy(name: string, args: any[] = []) {
   console.log(`Deploying ${name}...`);
-  const contract = await hre.viem.deployContract(name, args);
-  console.log(`${name} deployed to:`, contract.address);
-  const abi = contract.abi;
-  return { name, address: contract.address, abi };
+  const ContractFactory = await ethers.getContractFactory(name);
+  const contract = await ContractFactory.deploy(...args);
+  await contract.waitForDeployment();
+  const address = await contract.getAddress();
+  console.log(`${name} deployed to:`, address);
+  const abi = ContractFactory.interface.fragments;
+  return { name, address, abi };
 }
 
 async function main() {
   let blockNumber: number | undefined;
 
   if (!process.env.SKIP_CONFIG_UPDATE) {
-    const publicNetwork = await hre.viem.getPublicClient();
-    const _blockNumber = await publicNetwork.getBlockNumber();
-    blockNumber = Number(_blockNumber);
+    blockNumber = await ethers.provider.getBlockNumber();
   }
 
   const ethDriveAccountImplementation = await deploy("EthDriveAccount", [
@@ -44,11 +45,10 @@ async function main() {
   ]);
 
   if (!process.env.SKIP_CONFIG_UPDATE) {
-    const _chainId = hre.network.config.chainId;
-    if (!_chainId) {
+    const chainId = network.config.chainId?.toString();
+    if (!chainId) {
       throw new Error("Chain ID is not set in Hardhat config file");
     }
-    const chainId = _chainId.toString();
 
     const sharedDir = path.join(__dirname, "../shared");
     ensureDirExists(sharedDir);
@@ -77,8 +77,8 @@ export const ethDriveAbi = ${JSON.stringify(
     )} as const;
 
 // prettier-ignore
-export const ethDrivePaymasterAbi = ${JSON.stringify(
-      ethDrivePaymaster.abi || [],
+export const ethDriveAccountAbi = ${JSON.stringify(
+      ethDriveAccountImplementation.abi || [],
       null,
       2
     )} as const;
@@ -90,7 +90,7 @@ export const ethDrivePaymasterAbi = ${JSON.stringify(
       ensureDirExists(subgraphNetworkDir);
 
       const subgraphNetworkConfig = {
-        network: hre.network.name,
+        network: network.name,
         address: ethDrive.address,
         startBlock: blockNumber,
       };

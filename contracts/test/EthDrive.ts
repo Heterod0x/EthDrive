@@ -9,7 +9,10 @@ import {
   Hex,
   parseEther,
 } from "viem";
-import { entryPointAddress, erc6551RegistryAddress } from "../config";
+import {
+  entryPointAddress,
+  erc6551RegistryAddress,
+} from "../shared/external-contract";
 
 describe("EthDrive", function () {
   async function deployEthDriveFixture() {

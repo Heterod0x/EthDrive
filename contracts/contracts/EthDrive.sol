@@ -11,6 +11,7 @@ contract EthDrive is ERC721, Ownable {
     event CreateRegistry(string path);
 
     mapping(string => bool) public isCreated;
+    string[] public createdDirectories;
     address public erc6551Registry;
     address public accountImplementaton;
 
@@ -37,6 +38,7 @@ contract EthDrive is ERC721, Ownable {
         );
         _mint(msg.sender, tokenId);
 
+        createdDirectories.push(path);
         emit CreateRegistry(path);
     }
 

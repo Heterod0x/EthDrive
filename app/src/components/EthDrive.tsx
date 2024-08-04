@@ -34,7 +34,6 @@ import { readContract } from "@wagmi/core";
 
 import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
 
-import { ethDriveAbi } from "@/lib/abi/eth-drive";
 import { buildRecursiveDirectoryQuery } from "@/lib/query";
 
 import { gql, useQuery } from "@apollo/client";
@@ -45,13 +44,16 @@ import { Directory as DirectoryType } from "@/types/directory";
 
 import { Directory } from "@/components/Directory";
 import { Card } from "@/components/ui/card";
-import { ethDriveAccountAbi } from "@/lib/abi/eth-drive-account";
 
 import { request } from "@/lib/alchemy";
 import { dummySignature } from "@/lib/constant";
 import { entryPointAbi } from "../../../contracts/shared/app/external-abi";
 import { entryPointAddress } from "../../../contracts/shared/external-contract";
 import { useDeployedAddresses } from "@/hooks/useDeployed";
+import {
+  ethDriveAbi,
+  ethDriveAccountAbi,
+} from "../../../contracts/shared/app/abi";
 
 const MAX_DEPTH = 5;
 
