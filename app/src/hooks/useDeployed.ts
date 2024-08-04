@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { addresses } from "../../../contracts/shared/app/addresses";
-import { isChainId } from "@/types/chainId";
+import { isChainId } from "../../../contracts/shared/app/types";
 
 export function useDeployedAddresses(_chainId?: number) {
   const deployedAddresses = useMemo(() => {

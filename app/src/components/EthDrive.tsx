@@ -50,6 +50,9 @@ import { dummySignature } from "@/lib/constant";
 import { entryPointAbi } from "../../../contracts/shared/app/external-abi";
 import { entryPointAddress } from "../../../contracts/shared/external-contract";
 import { useDeployedAddresses } from "@/hooks/useDeployed";
+
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+
 import {
   ethDriveAbi,
   ethDriveAccountAbi,
@@ -96,35 +99,20 @@ export function EthDrive({ path }: { path: string }) {
         <Link href="/">
           <div className="flex items-center space-x-2">
             <Image src="/logo.png" alt="logo" width="32" height="32" />
-            <h1 className="text-2xl font-semibold">EthDrive</h1>
+            <h1 className="hidden lg:block text-2xl font-semibold">EthDrive</h1>
           </div>
         </Link>
         <div className="flex items-center space-x-4">
           {isConnected && (
-            <React.Fragment>
-              <Button onClick={() => setIsCreateDirectoryModalOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> New
-              </Button>
-              <User
-                className="h-8 w-8 cursor-pointer"
-                onClick={() => {
-                  disconnect();
-                }}
-              />
-            </React.Fragment>
-          )}
-          {!isConnected && (
-            <Button
-              onClick={() => {
-                if (!openConnectModal) {
-                  throw new Error("openConnectModal is not defined");
-                }
-                openConnectModal();
-              }}
-            >
-              Connect Wallet
+            <Button onClick={() => setIsCreateDirectoryModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> New
             </Button>
           )}
+          <ConnectButton
+            accountStatus="avatar"
+            chainStatus="name"
+            showBalance={false}
+          />
         </div>
       </header>
 
@@ -197,7 +185,8 @@ export function EthDrive({ path }: { path: string }) {
                     baseFeePerGas + BigInt(maxPriorityFeePerGas);
                   const partialUserOperation = {
                     sender,
-                    nonce: toHex(nonce),
+                    // TODO: fix
+                    nonce: toHex(nonce as any),
                     initCode: "0x",
                     callData: callData,
                     maxFeePerGas: toHex(maxFeePerGas),
