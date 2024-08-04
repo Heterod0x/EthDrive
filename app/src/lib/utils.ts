@@ -66,6 +66,7 @@ export function parseVirtualDirectories(
           holder: "",
           subdirectories: [],
           depth: index,
+          isExpanded: true,
         });
       }
     });

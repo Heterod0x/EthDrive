@@ -23,7 +23,6 @@ import {
 
 import {
   useAccount,
-  useDisconnect,
   usePublicClient,
   useWalletClient,
   useWriteContract,
@@ -36,7 +35,7 @@ import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
 
 import Link from "next/link";
 import Image from "next/image";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+
 import { Directory as DirectoryType } from "@/types/directory";
 
 import { Directory } from "@/components/Directory";
@@ -54,25 +53,24 @@ import {
   ethDriveAbi,
   ethDriveAccountAbi,
 } from "../../../contracts/shared/app/abi";
-import { useDirectories } from "@/hooks/useDirectories";
+import { useRootDirectory } from "@/hooks/useRootDirectory";
 
-export function EthDrive({ path }: { path: string }) {
+export function EthDrive() {
   const config = useConfig();
   const { writeContract } = useWriteContract();
   const { isConnected, chainId, chain } = useAccount();
 
   const { deployedAddresses } = useDeployedAddresses(chain?.id);
 
-  const { openConnectModal } = useConnectModal();
-  const { disconnect } = useDisconnect();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
 
-  const { directories } = useDirectories();
+  const { rootDirectory } = useRootDirectory();
+
   const [selectedDirectory, setSelectedDirectory] = useState<DirectoryType>();
   const segments = useMemo(() => {
     if (!selectedDirectory) {
-      return [];
+      return ["root"];
     }
     return selectedDirectory.path.split("/").filter((segment) => segment);
   }, [selectedDirectory]);
@@ -107,28 +105,10 @@ export function EthDrive({ path }: { path: string }) {
       <div className="flex flex-grow overflow-hidden">
         <div className="w-80 border-r">
           <div className="h-full p-4 space-y-4">
-            <div>
-              <div className="mb-2 text-lg font-medium">
-                Tenderly Virtual Testnet
-              </div>
-              {directories.virtual.map((directory) => (
-                <Directory
-                  key={directory.path}
-                  directory={directory}
-                  onSelected={setSelectedDirectory}
-                />
-              ))}
-            </div>
-            <div>
-              <div className="mb-2 text-lg font-medium">Sepolia</div>
-              {directories.sepolia.map((directory) => (
-                <Directory
-                  key={directory.path}
-                  directory={directory}
-                  onSelected={setSelectedDirectory}
-                />
-              ))}
-            </div>
+            <Directory
+              directory={rootDirectory}
+              onSelected={setSelectedDirectory}
+            />
           </div>
         </div>
 
@@ -149,97 +129,96 @@ export function EthDrive({ path }: { path: string }) {
                 })}
               </BreadcrumbList>
             </Breadcrumb>
-            {selectedDirectory && (
-              <Button
-                onClick={async () => {
-                  if (!chainId) {
-                    throw new Error("chainId is not defined");
-                  }
-                  if (!walletClient) {
-                    throw new Error("walletClient is not defined");
-                  }
-                  if (!publicClient) {
-                    throw new Error("publicClient is not defined");
-                  }
-                  if (!deployedAddresses) {
-                    throw new Error("deployedAddresses is not defined");
-                  }
-                  const sender = selectedDirectory.tokenBoundAccount as Address;
-                  const nonce = await readContract(config, {
-                    abi: ethDriveAccountAbi,
-                    address: sender,
-                    functionName: "getNonce",
-                    args: [],
-                  });
-                  // TODO: use actual callData
-                  const callData = encodeFunctionData({
-                    abi: ethDriveAccountAbi,
-                    functionName: "execute",
-                    args: [zeroAddress, BigInt(0), "0x"],
-                  });
-                  const latestBlock = await publicClient.getBlock();
-                  const baseFeePerGas = latestBlock.baseFeePerGas || BigInt(0);
-                  const { result: maxPriorityFeePerGas } = await request(
-                    "eth-sepolia",
-                    "rundler_maxPriorityFeePerGas",
-                    []
-                  );
-                  const maxFeePerGas =
-                    baseFeePerGas + BigInt(maxPriorityFeePerGas);
-                  const partialUserOperation = {
-                    sender,
-                    nonce: toHex(nonce),
-                    initCode: "0x",
-                    callData: callData,
-                    maxFeePerGas: toHex(maxFeePerGas),
-                    maxPriorityFeePerGas: maxPriorityFeePerGas,
-                    paymasterAndData: deployedAddresses.ethDrivePaymaster,
-                    signature: dummySignature,
-                  };
-                  const {
-                    result: {
-                      callGasLimit,
-                      preVerificationGas,
-                      verificationGasLimit,
-                    },
-                  } = await request(
-                    "eth-sepolia",
-                    "eth_estimateUserOperationGas",
-                    [partialUserOperation, entryPointAddress]
-                  );
-                  const userOperation = {
-                    ...partialUserOperation,
+
+            <Button
+              onClick={async () => {
+                if (!chainId) {
+                  throw new Error("chainId is not defined");
+                }
+                if (!walletClient) {
+                  throw new Error("walletClient is not defined");
+                }
+                if (!publicClient) {
+                  throw new Error("publicClient is not defined");
+                }
+                if (!deployedAddresses) {
+                  throw new Error("deployedAddresses is not defined");
+                }
+                const sender = selectedDirectory.tokenBoundAccount as Address;
+                const nonce = await readContract(config, {
+                  abi: ethDriveAccountAbi,
+                  address: sender,
+                  functionName: "getNonce",
+                  args: [],
+                });
+                // TODO: use actual callData
+                const callData = encodeFunctionData({
+                  abi: ethDriveAccountAbi,
+                  functionName: "execute",
+                  args: [zeroAddress, BigInt(0), "0x"],
+                });
+                const latestBlock = await publicClient.getBlock();
+                const baseFeePerGas = latestBlock.baseFeePerGas || BigInt(0);
+                const { result: maxPriorityFeePerGas } = await request(
+                  "eth-sepolia",
+                  "rundler_maxPriorityFeePerGas",
+                  []
+                );
+                const maxFeePerGas =
+                  baseFeePerGas + BigInt(maxPriorityFeePerGas);
+                const partialUserOperation = {
+                  sender,
+                  nonce: toHex(nonce),
+                  initCode: "0x",
+                  callData: callData,
+                  maxFeePerGas: toHex(maxFeePerGas),
+                  maxPriorityFeePerGas: maxPriorityFeePerGas,
+                  paymasterAndData: deployedAddresses.ethDrivePaymaster,
+                  signature: dummySignature,
+                };
+                const {
+                  result: {
                     callGasLimit,
                     preVerificationGas,
                     verificationGasLimit,
-                  } as any;
-                  const userOpHash = await readContract(config, {
-                    abi: entryPointAbi,
-                    address: entryPointAddress,
-                    functionName: "getUserOpHash",
-                    args: [userOperation],
-                  });
-                  const signature = await walletClient.signMessage({
-                    message: { raw: userOpHash },
-                  });
-                  userOperation.signature = signature;
-                  console.log("userOperation", userOperation);
-                  const sendUserOperationRes = await request(
-                    "eth-sepolia",
-                    "eth_sendUserOperation",
-                    [userOperation, entryPointAddress]
-                  );
-                  console.log("sendUserOperationRes", sendUserOperationRes);
-                }}
-              >
-                Test
-              </Button>
-            )}
+                  },
+                } = await request(
+                  "eth-sepolia",
+                  "eth_estimateUserOperationGas",
+                  [partialUserOperation, entryPointAddress]
+                );
+                const userOperation = {
+                  ...partialUserOperation,
+                  callGasLimit,
+                  preVerificationGas,
+                  verificationGasLimit,
+                } as any;
+                const userOpHash = await readContract(config, {
+                  abi: entryPointAbi,
+                  address: entryPointAddress,
+                  functionName: "getUserOpHash",
+                  args: [userOperation],
+                });
+                const signature = await walletClient.signMessage({
+                  message: { raw: userOpHash },
+                });
+                userOperation.signature = signature;
+                console.log("userOperation", userOperation);
+                const sendUserOperationRes = await request(
+                  "eth-sepolia",
+                  "eth_sendUserOperation",
+                  [userOperation, entryPointAddress]
+                );
+                console.log("sendUserOperationRes", sendUserOperationRes);
+              }}
+            >
+              Test
+            </Button>
           </div>
           <div>
             {(selectedDirectory
               ? selectedDirectory.subdirectories
-              : directories.sepolia
+              : rootDirectory.subdirectories
             ).map((directory) => (
               <Card
                 key={directory.path}
