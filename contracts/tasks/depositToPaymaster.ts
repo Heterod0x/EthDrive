@@ -12,7 +12,7 @@ task("depositToPaymaster", "Deposits ETH into the EthDrivePaymaster contract")
       "EthDrivePaymaster",
       paymaster
     );
-    console.log("EthDrivePaymaster deployed at:", ethDrivePaymaster.address);
+    console.log("EthDrivePaymaster:", ethDrivePaymaster.address);
 
     const ethDrivePaymasterDepositHash = await ethDrivePaymaster.write.deposit({
       value: ethAmount,

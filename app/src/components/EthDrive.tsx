@@ -46,7 +46,8 @@ import { request } from "@/lib/alchemy";
 import { dummySignature } from "@/lib/constant";
 import { entryPointAbi } from "../../../contracts/shared/app/external-abi";
 import { entryPointAddress } from "../../../contracts/shared/external-contract";
-import { useDeployedAddresses } from "@/hooks/useDeployed";
+import { useConnectedChainAddresses } from "@/hooks/useConnectedChainAddresses";
+import { useSelectedDirectiryChainConfig } from "@/hooks/useSelectedDirectiryChainConfig";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
@@ -58,10 +59,8 @@ import { useRootDirectory } from "@/hooks/useRootDirectory";
 
 export function EthDrive() {
   const config = useConfig();
-  const { writeContract } = useWriteContract();
-  const { isConnected, chainId, chain } = useAccount();
-
-  const { deployedAddresses } = useDeployedAddresses(chain?.id);
+  const { writeContract, error } = useWriteContract();
+  const { isConnected, chainId: connectedChainId } = useAccount();
 
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
@@ -71,7 +70,12 @@ export function EthDrive() {
   const [selectedDirectoryPath, setSelectedDirectoryPath] =
     useState<string>("root");
   const [selectedDirectory, setSelectedDirectory] =
-    useState<DirectoryType | null>(rootDirectory);
+    useState<DirectoryType>(rootDirectory);
+
+  const { connectedChainAddresses } = useConnectedChainAddresses();
+  const { selectedDirectoryChainConfig } = useSelectedDirectiryChainConfig(
+    selectedDirectory.path
+  );
 
   const segments = useMemo(() => {
     return selectedDirectoryPath.split("/").filter((segment) => segment);
@@ -80,8 +84,6 @@ export function EthDrive() {
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
     useState(false);
   const [createDirectoryName, setCreateDirectoryName] = useState("");
-
-  console.log("root", rootDirectory);
 
   useEffect(() => {
     const findDirectory = (
@@ -93,10 +95,11 @@ export function EthDrive() {
       const subDir = dir.subdirectories.find((d) => d.name === currentSegment);
       return subDir ? findDirectory(subDir, remainingPath) : null;
     };
-
     const pathSegments = selectedDirectoryPath.split("/").slice(1);
     const foundDirectory = findDirectory(rootDirectory, pathSegments);
-    setSelectedDirectory(foundDirectory);
+    if (foundDirectory) {
+      setSelectedDirectory(foundDirectory);
+    }
   }, [selectedDirectoryPath, rootDirectory]);
 
   return (
@@ -162,91 +165,104 @@ export function EthDrive() {
             </Breadcrumb>
 
             <Button
+              disabled={selectedDirectory.depth < 2}
               onClick={async () => {
-                if (!chainId) {
-                  throw new Error("chainId is not defined");
-                }
                 if (!walletClient) {
                   throw new Error("walletClient is not defined");
                 }
                 if (!publicClient) {
                   throw new Error("publicClient is not defined");
                 }
-                if (!deployedAddresses) {
-                  throw new Error("deployedAddresses is not defined");
+                if (!connectedChainAddresses) {
+                  throw new Error("connectedChainAddresses is not defined");
                 }
-                if (!selectedDirectory) {
-                  throw new Error("selectedDirectory is not defined");
+                if (!selectedDirectoryChainConfig) {
+                  throw new Error("connectedChainConfig is not defined");
                 }
-                const sender = selectedDirectory.tokenBoundAccount as Address;
-                const nonce = await readContract(config, {
-                  abi: ethDriveAccountAbi,
-                  address: sender,
-                  functionName: "getNonce",
-                  args: [],
-                });
+
+                if (selectedDirectoryChainConfig.chainId !== connectedChainId) {
+                  throw new Error("chainid did not match");
+                }
+
+                const account = selectedDirectory.tokenBoundAccount as Address;
                 // TODO: use actual callData
                 const callData = encodeFunctionData({
                   abi: ethDriveAccountAbi,
                   functionName: "execute",
                   args: [zeroAddress, BigInt(0), "0x"],
                 });
-                const latestBlock = await publicClient.getBlock();
-                const baseFeePerGas = latestBlock.baseFeePerGas || BigInt(0);
-                const { result: maxPriorityFeePerGas } = await request(
-                  "eth-sepolia",
-                  "rundler_maxPriorityFeePerGas",
-                  []
-                );
-                const maxFeePerGas =
-                  baseFeePerGas + BigInt(maxPriorityFeePerGas);
-                const partialUserOperation = {
-                  sender,
-                  nonce: toHex(nonce),
-                  initCode: "0x",
-                  callData: callData,
-                  maxFeePerGas: toHex(maxFeePerGas),
-                  maxPriorityFeePerGas: maxPriorityFeePerGas,
-                  paymasterAndData: deployedAddresses.ethDrivePaymaster,
-                  signature: dummySignature,
-                };
-                const {
-                  result: {
+                if (selectedDirectoryChainConfig.isAccountAbstractionEnabled) {
+                  console.log("account abstraction is enabled");
+                  const nonce = await readContract(config, {
+                    abi: ethDriveAccountAbi,
+                    address: account,
+                    functionName: "getNonce",
+                    args: [],
+                  });
+                  const latestBlock = await publicClient.getBlock();
+                  const baseFeePerGas = latestBlock.baseFeePerGas || BigInt(0);
+                  const { result: maxPriorityFeePerGas } = await request(
+                    "eth-sepolia",
+                    "rundler_maxPriorityFeePerGas",
+                    []
+                  );
+                  const maxFeePerGas =
+                    baseFeePerGas + BigInt(maxPriorityFeePerGas);
+                  const partialUserOperation = {
+                    sender: account,
+                    nonce: toHex(nonce),
+                    initCode: "0x",
+                    callData: callData,
+                    maxFeePerGas: toHex(maxFeePerGas),
+                    maxPriorityFeePerGas: maxPriorityFeePerGas,
+                    paymasterAndData: connectedChainAddresses.ethDrivePaymaster,
+                    signature: dummySignature,
+                  };
+                  const {
+                    result: {
+                      callGasLimit,
+                      preVerificationGas,
+                      verificationGasLimit,
+                    },
+                  } = await request(
+                    "eth-sepolia",
+                    "eth_estimateUserOperationGas",
+                    [partialUserOperation, entryPointAddress]
+                  );
+                  const userOperation = {
+                    ...partialUserOperation,
                     callGasLimit,
                     preVerificationGas,
                     verificationGasLimit,
-                  },
-                } = await request(
-                  "eth-sepolia",
-                  "eth_estimateUserOperationGas",
-                  [partialUserOperation, entryPointAddress]
-                );
-                const userOperation = {
-                  ...partialUserOperation,
-                  callGasLimit,
-                  preVerificationGas,
-                  verificationGasLimit,
-                } as any;
-                const userOpHash = await readContract(config, {
-                  abi: entryPointAbi,
-                  address: entryPointAddress,
-                  functionName: "getUserOpHash",
-                  args: [userOperation],
-                });
-                const signature = await walletClient.signMessage({
-                  message: { raw: userOpHash },
-                });
-                userOperation.signature = signature;
-                console.log("userOperation", userOperation);
-                const sendUserOperationRes = await request(
-                  "eth-sepolia",
-                  "eth_sendUserOperation",
-                  [userOperation, entryPointAddress]
-                );
-                console.log("sendUserOperationRes", sendUserOperationRes);
+                  } as any;
+                  const userOpHash = await readContract(config, {
+                    abi: entryPointAbi,
+                    address: entryPointAddress,
+                    functionName: "getUserOpHash",
+                    args: [userOperation],
+                  });
+                  const signature = await walletClient.signMessage({
+                    message: { raw: userOpHash },
+                  });
+                  userOperation.signature = signature;
+                  console.log("userOperation", userOperation);
+                  const sendUserOperationRes = await request(
+                    "eth-sepolia",
+                    "eth_sendUserOperation",
+                    [userOperation, entryPointAddress]
+                  );
+                  console.log("sendUserOperationRes", sendUserOperationRes);
+                } else {
+                  console.log("account abstraction is not enabled");
+                  const txHash = await walletClient.sendTransaction({
+                    to: account,
+                    data: callData,
+                  });
+                  console.log("txHash", txHash);
+                }
               }}
             >
-              Test
+              Test Transaction
             </Button>
           </div>
           <div>
@@ -286,13 +302,12 @@ export function EthDrive() {
             </Button>
             <Button
               onClick={() => {
-                if (!deployedAddresses) {
-                  throw new Error("deployedAddresses is not defined");
+                if (!connectedChainAddresses) {
+                  throw new Error("connectedChainAddresses is not defined");
                 }
-
                 writeContract({
                   abi: ethDriveAbi,
-                  address: deployedAddresses.ethDrive,
+                  address: connectedChainAddresses.ethDrive,
                   functionName: "createDirectory",
                   args: [createDirectoryName],
                 });

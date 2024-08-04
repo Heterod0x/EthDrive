@@ -121,11 +121,14 @@ describe("EthDrive", function () {
         value: parseEther("0.001"),
       });
       const nonce = await ethDriveAccount.read.getNonce();
+      await ethDriveAccount.write.execute([zeroAddress, BigInt(0), "0x"]);
+
       const callData = encodeFunctionData({
         abi: ethDriveAccountImplementation.abi,
         functionName: "execute",
         args: [zeroAddress, BigInt(0), "0x"],
       });
+
       const userOperation = {
         sender: ethDriveAccount.address,
         nonce: nonce,

@@ -3,9 +3,12 @@
 import { useMemo } from "react";
 import { addresses } from "../../../contracts/shared/app/addresses";
 import { isChainId } from "../../../contracts/shared/app/types";
+import { useAccount } from "wagmi";
 
-export function useDeployedAddresses(_chainId?: number) {
-  const deployedAddresses = useMemo(() => {
+export function useConnectedChainAddresses() {
+  const { chainId: _chainId } = useAccount();
+
+  const connectedChainAddresses = useMemo(() => {
     const chainId = _chainId?.toString();
     if (!isChainId(chainId)) {
       return;
@@ -13,5 +16,5 @@ export function useDeployedAddresses(_chainId?: number) {
     return addresses[chainId];
   }, [_chainId]);
 
-  return { deployedAddresses };
+  return { connectedChainAddresses };
 }

@@ -56,7 +56,7 @@ export function parseVirtualDirectories(
     let currentPath = "";
 
     parts.forEach((part, index) => {
-      currentPath += `/${part}`;
+      currentPath += index === 0 ? part : `/${part}`;
       if (!directoryMap.has(currentPath)) {
         directoryMap.set(currentPath, {
           path: currentPath,
@@ -73,13 +73,18 @@ export function parseVirtualDirectories(
 
   // Then, assign the correct data and build the tree structure
   solidityDirectories.forEach((dir) => {
+    console.log("dir.path", dir.path);
     const dirObj = directoryMap.get(dir.path);
+    console.log("dirObj", dirObj);
+
     if (dirObj) {
       dirObj.tokenId = dir.tokenId;
       dirObj.tokenBoundAccount = dir.tokenBoundAccount;
       dirObj.holder = dir.holder;
     }
   });
+
+  console.log("directoryMap", directoryMap);
 
   // Build the tree structure
   directoryMap.forEach((dir, path) => {
