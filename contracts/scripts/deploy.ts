@@ -22,15 +22,9 @@ async function deploy(name: string, args: any[] = []) {
 }
 
 async function main() {
-  let chainId: string | undefined;
   let blockNumber: number | undefined;
 
   if (!process.env.SKIP_CONFIG_UPDATE) {
-    const _chainId = hre.network.config.chainId;
-    if (!_chainId) {
-      throw new Error("Chain ID is not set in Hardhat config file");
-    }
-    chainId = _chainId.toString();
     const publicNetwork = await hre.viem.getPublicClient();
     const _blockNumber = await publicNetwork.getBlockNumber();
     blockNumber = Number(_blockNumber);
@@ -50,6 +44,12 @@ async function main() {
   ]);
 
   if (!process.env.SKIP_CONFIG_UPDATE) {
+    const _chainId = hre.network.config.chainId;
+    if (!_chainId) {
+      throw new Error("Chain ID is not set in Hardhat config file");
+    }
+    const chainId = _chainId.toString();
+
     const sharedDir = path.join(__dirname, "../shared");
     ensureDirExists(sharedDir);
 
@@ -66,46 +66,62 @@ async function main() {
       );
     }
 
-    const subgraphNetworkDir = path.join(subgraphDir, "network");
-    ensureDirExists(subgraphNetworkDir);
-
-    const subgraphNetworkConfig = {
-      network: hre.network.name,
-      address: ethDrive.address,
-      startBlock: blockNumber,
-    };
-    fs.writeFileSync(
-      path.join(subgraphNetworkDir, `${chainId}.json`),
-      JSON.stringify(subgraphNetworkConfig, null, 2)
-    );
-
     const appDir = path.join(sharedDir, "app");
     ensureDirExists(appDir);
 
-    const appAddressContent = `// App addresses
-// prettier-ignore
-export const ethDrivePaymasterAddress = "${ethDrivePaymaster?.address || ""}";
-export const ethDriveAddress = "${ethDrive?.address || ""}";
-    `;
-
-    const appAbiContent = `// App ABIs
-// prettier-ignore
+    const appAbiContent = `// prettier-ignore
 export const ethDriveAbi = ${JSON.stringify(
       ethDrive.abi || [],
       null,
       2
     )} as const;
 
-// // prettier-ignore
+// prettier-ignore
 export const ethDrivePaymasterAbi = ${JSON.stringify(
       ethDrivePaymaster.abi || [],
       null,
       2
     )} as const;
 `;
-
-    fs.writeFileSync(path.join(appDir, "address.ts"), appAddressContent);
     fs.writeFileSync(path.join(appDir, "abi.ts"), appAbiContent);
+
+    if (chainId !== "31337") {
+      const subgraphNetworkDir = path.join(subgraphDir, "network");
+      ensureDirExists(subgraphNetworkDir);
+
+      const subgraphNetworkConfig = {
+        network: hre.network.name,
+        address: ethDrive.address,
+        startBlock: blockNumber,
+      };
+      fs.writeFileSync(
+        path.join(subgraphNetworkDir, `${chainId}.json`),
+        JSON.stringify(subgraphNetworkConfig, null, 2)
+      );
+
+      const appAddressesPath = path.join(appDir, "addresses.ts");
+
+      const existingAppAddresses = fs.existsSync(appAddressesPath)
+        ? require(appAddressesPath).addresses // Import the existing addresses object
+        : {};
+
+      const updatedAppAddresses = {
+        ...existingAppAddresses,
+        [chainId]: {
+          ethDrive: ethDrive.address,
+          ethDrivePaymaster: ethDrivePaymaster.address,
+        },
+      };
+
+      const appAddressesContent = `// prettier-ignore
+export const addresses = ${JSON.stringify(
+        updatedAppAddresses,
+        null,
+        2
+      )} as const;
+`;
+      fs.writeFileSync(appAddressesPath, appAddressesContent);
+    }
   }
 }
 

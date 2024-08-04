@@ -47,15 +47,11 @@ import { Directory } from "@/components/Directory";
 import { Card } from "@/components/ui/card";
 import { ethDriveAccountAbi } from "@/lib/abi/eth-drive-account";
 
-import {
-  ethDriveAddress,
-  entryPointAddress,
-  ethDrivePaymasterAddress,
-} from "@/lib/address";
-
 import { request } from "@/lib/alchemy";
 import { dummySignature } from "@/lib/constant";
-import { entryPointAbi } from "@/lib/abi/entry-point";
+import { entryPointAbi } from "../../../contracts/shared/app/external-abi";
+import { entryPointAddress } from "../../../contracts/shared/external-contract";
+import { useDeployedAddresses } from "@/hooks/useDeployed";
 
 const MAX_DEPTH = 5;
 
@@ -63,6 +59,9 @@ export function EthDrive({ path }: { path: string }) {
   const config = useConfig();
   const { writeContract } = useWriteContract();
   const { isConnected, chainId, chain } = useAccount();
+
+  const { deployedAddresses } = useDeployedAddresses(chain?.id);
+
   const { openConnectModal } = useConnectModal();
   const { disconnect } = useDisconnect();
   const { data: walletClient } = useWalletClient();
@@ -169,6 +168,9 @@ export function EthDrive({ path }: { path: string }) {
                   if (!publicClient) {
                     throw new Error("publicClient is not defined");
                   }
+                  if (!deployedAddresses) {
+                    throw new Error("deployedAddresses is not defined");
+                  }
                   const sender = selectedDirectory.tokenBountAccount as Address;
                   const nonce = await readContract(config, {
                     abi: ethDriveAccountAbi,
@@ -198,7 +200,7 @@ export function EthDrive({ path }: { path: string }) {
                     callData: callData,
                     maxFeePerGas: toHex(maxFeePerGas),
                     maxPriorityFeePerGas: maxPriorityFeePerGas,
-                    paymasterAndData: ethDrivePaymasterAddress,
+                    paymasterAndData: deployedAddresses.ethDrivePaymaster,
                     signature: dummySignature,
                   };
                   const {
@@ -281,9 +283,13 @@ export function EthDrive({ path }: { path: string }) {
             </Button>
             <Button
               onClick={() => {
+                if (!deployedAddresses) {
+                  throw new Error("deployedAddresses is not defined");
+                }
+
                 writeContract({
                   abi: ethDriveAbi,
-                  address: ethDriveAddress,
+                  address: deployedAddresses.ethDrive,
                   functionName: "createDirectory",
                   args: [createDirectoryName],
                 });

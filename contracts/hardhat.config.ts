@@ -3,6 +3,8 @@ import "@nomicfoundation/hardhat-toolbox-viem";
 import { tenderlyVirtualTestnet } from "./shared/rpc";
 import { defaultSignerPrivateKey } from "./shared/key";
 
+import "./tasks/depositToPaymaster";
+
 const accounts = [process.env.PRIVATE_KEY || defaultSignerPrivateKey];
 
 const config: HardhatUserConfig = {

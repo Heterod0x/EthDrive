@@ -1,4 +1,3 @@
-// App ABIs
 // prettier-ignore
 export const ethDriveAbi = [
   {
@@ -529,7 +528,7 @@ export const ethDriveAbi = [
   }
 ] as const;
 
-// // prettier-ignore
+// prettier-ignore
 export const ethDrivePaymasterAbi = [
   {
     "inputs": [
