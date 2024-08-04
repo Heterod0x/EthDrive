@@ -8,12 +8,20 @@ import "./interfaces/IERC6551Registry.sol";
 import "./EthDriveAccount.sol";
 
 contract EthDrive is ERC721, Ownable {
+    struct Directory {
+        string path;
+        uint256 tokenId;
+        address tokenBoundAccount;
+        address holder;
+    }
+
     event CreateRegistry(string path);
 
     mapping(string => bool) public isCreated;
-    string[] public createdDirectories;
     address public erc6551Registry;
     address public accountImplementaton;
+
+    Directory[] private _createdDirectories;
 
     constructor(
         address erc6551Registry_,
@@ -37,8 +45,13 @@ contract EthDrive is ERC721, Ownable {
             tokenId
         );
         _mint(msg.sender, tokenId);
-
-        createdDirectories.push(path);
+        Directory memory directory = Directory({
+            path: path,
+            tokenId: tokenId,
+            tokenBoundAccount: getTokenBoundAccountFromTokenId(tokenId),
+            holder: msg.sender
+        });
+        _createdDirectories.push(directory);
         emit CreateRegistry(path);
     }
 
@@ -92,5 +105,9 @@ contract EthDrive is ERC721, Ownable {
             EthDriveAccount(payable(address(uint160(account)))).cacheOwner(to);
         }
         super._beforeTokenTransfer(from, to, tokenId);
+    }
+
+    function getCreatedDirectories() public view returns (Directory[] memory) {
+        return _createdDirectories;
     }
 }

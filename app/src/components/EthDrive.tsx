@@ -34,7 +34,6 @@ import { readContract } from "@wagmi/core";
 
 import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
 
-import { gql, useQuery } from "@apollo/client";
 import Link from "next/link";
 import Image from "next/image";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
@@ -112,7 +111,7 @@ export function EthDrive({ path }: { path: string }) {
               <div className="mb-2 text-lg font-medium">
                 Tenderly Virtual Testnet
               </div>
-              {directories.sepolia.map((directory) => (
+              {directories.virtual.map((directory) => (
                 <Directory
                   key={directory.path}
                   directory={directory}
@@ -165,7 +164,7 @@ export function EthDrive({ path }: { path: string }) {
                   if (!deployedAddresses) {
                     throw new Error("deployedAddresses is not defined");
                   }
-                  const sender = selectedDirectory.tokenBountAccount as Address;
+                  const sender = selectedDirectory.tokenBoundAccount as Address;
                   const nonce = await readContract(config, {
                     abi: ethDriveAccountAbi,
                     address: sender,

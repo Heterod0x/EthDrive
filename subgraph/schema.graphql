@@ -3,7 +3,7 @@ type Directory @entity {
   path: String!
   name: String!
   tokenId: BigInt!
-  tokenBountAccount: Bytes!
+  tokenBoundAccount: Bytes!
   holder: Bytes!
   subdirectories: [Directory!]!
   depth: Int!

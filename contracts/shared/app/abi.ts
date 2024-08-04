@@ -189,25 +189,6 @@ export const ethDriveAbi = [
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "createdDirectories",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "string[]",
         "name": "directoryStrings",
         "type": "string[]"
@@ -251,6 +232,41 @@ export const ethDriveAbi = [
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCreatedDirectories",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "path",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenBoundAccount",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "holder",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct EthDrive.Directory[]",
+        "name": "",
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "view",
