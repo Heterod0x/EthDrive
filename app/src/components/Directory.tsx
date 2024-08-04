@@ -4,7 +4,7 @@ import { Directory as DirectoryType } from "@/types/directory";
 
 interface DirectoryProps {
   directory: DirectoryType;
-  onSelected: (directory: DirectoryType) => void;
+  onSelected: (path: string) => void;
 }
 
 export function Directory({ directory, onSelected }: DirectoryProps) {
@@ -18,7 +18,7 @@ export function Directory({ directory, onSelected }: DirectoryProps) {
   };
 
   const handleDirectoryClick = () => {
-    onSelected(directory);
+    onSelected(directory.path);
   };
 
   return (

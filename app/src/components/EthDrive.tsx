@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Folder, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,17 +67,34 @@ export function EthDrive() {
 
   const { rootDirectory } = useRootDirectory();
 
-  const [selectedDirectory, setSelectedDirectory] = useState<DirectoryType>();
+  const [selectedDirectoryPath, setSelectedDirectoryPath] =
+    useState<string>("root");
+  const [selectedDirectory, setSelectedDirectory] =
+    useState<DirectoryType | null>();
+
   const segments = useMemo(() => {
-    if (!selectedDirectory) {
-      return ["root"];
-    }
-    return selectedDirectory.path.split("/").filter((segment) => segment);
-  }, [selectedDirectory]);
+    return selectedDirectoryPath.split("/").filter((segment) => segment);
+  }, [selectedDirectoryPath]);
 
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
     useState(false);
   const [createDirectoryName, setCreateDirectoryName] = useState("");
+
+  useEffect(() => {
+    const findDirectory = (
+      dir: DirectoryType,
+      path: string[]
+    ): DirectoryType | null => {
+      if (path.length === 0) return dir;
+      const [currentSegment, ...remainingPath] = path;
+      const subDir = dir.subdirectories.find((d) => d.name === currentSegment);
+      return subDir ? findDirectory(subDir, remainingPath) : null;
+    };
+
+    const pathSegments = selectedDirectoryPath.split("/").slice(1);
+    const foundDirectory = findDirectory(rootDirectory, pathSegments);
+    setSelectedDirectory(foundDirectory);
+  }, [selectedDirectoryPath, rootDirectory]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -107,7 +124,7 @@ export function EthDrive() {
           <div className="h-full p-4 space-y-4">
             <Directory
               directory={rootDirectory}
-              onSelected={setSelectedDirectory}
+              onSelected={setSelectedDirectoryPath}
             />
           </div>
         </div>
@@ -118,11 +135,18 @@ export function EthDrive() {
               <BreadcrumbList>
                 <BreadcrumbSeparator>/</BreadcrumbSeparator>
                 {segments.map((segment, i) => {
+                  const fullPath = segments.slice(0, i + 1).join("/");
+
                   return (
                     <React.Fragment key={`breadcrumb_${i}`}>
                       {i > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}
                       <BreadcrumbItem>
-                        <BreadcrumbPage>{segment}</BreadcrumbPage>
+                        <BreadcrumbPage
+                          onClick={() => setSelectedDirectoryPath(fullPath)}
+                          className="cursor-pointer"
+                        >
+                          {segment}
+                        </BreadcrumbPage>
                       </BreadcrumbItem>
                     </React.Fragment>
                   );
@@ -143,6 +167,9 @@ export function EthDrive() {
                 }
                 if (!deployedAddresses) {
                   throw new Error("deployedAddresses is not defined");
+                }
+                if (!selectedDirectory) {
+                  throw new Error("selectedDirectory is not defined");
                 }
                 const sender = selectedDirectory.tokenBoundAccount as Address;
                 const nonce = await readContract(config, {
@@ -223,7 +250,7 @@ export function EthDrive() {
               <Card
                 key={directory.path}
                 className="flex items-center p-2 cursor-pointer w-full mb-2"
-                onClick={() => setSelectedDirectory(directory)}
+                onClick={() => setSelectedDirectoryPath(directory.path)}
               >
                 <Folder className="h-4 w-4 mr-2" />
                 <span>{directory.name}</span>
