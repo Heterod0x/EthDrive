@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Folder, Plus, User } from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
+import { Folder, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
@@ -23,7 +24,6 @@ import {
 
 import {
   useAccount,
-  useDisconnect,
   usePublicClient,
   useWalletClient,
   useWriteContract,
@@ -34,60 +34,73 @@ import { readContract } from "@wagmi/core";
 
 import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
 
-import { ethDriveAbi } from "@/lib/abi/eth-drive";
-import { buildRecursiveDirectoryQuery } from "@/lib/query";
-
-import { gql, useQuery } from "@apollo/client";
 import Link from "next/link";
 import Image from "next/image";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+
 import { Directory as DirectoryType } from "@/types/directory";
 
 import { Directory } from "@/components/Directory";
 import { Card } from "@/components/ui/card";
-import { ethDriveAccountAbi } from "@/lib/abi/eth-drive-account";
-
-import {
-  ethDriveAddress,
-  entryPointAddress,
-  ethDrivePaymasterAddress,
-} from "@/lib/address";
 
 import { request } from "@/lib/alchemy";
 import { dummySignature } from "@/lib/constant";
-import { entryPointAbi } from "@/lib/abi/entry-point";
+import { entryPointAbi } from "../../../contracts/shared/app/external-abi";
+import { entryPointAddress } from "../../../contracts/shared/external-contract";
+import { useConnectedChainAddresses } from "@/hooks/useConnectedChainAddresses";
+import { useSelectedDirectiryChainConfig } from "@/hooks/useSelectedDirectiryChainConfig";
 
-const MAX_DEPTH = 5;
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
-export function EthDrive({ path }: { path: string }) {
+import {
+  ethDriveAbi,
+  ethDriveAccountAbi,
+} from "../../../contracts/shared/app/abi";
+import { useRootDirectory } from "@/hooks/useRootDirectory";
+
+export function EthDrive() {
   const config = useConfig();
-  const { writeContract } = useWriteContract();
-  const { isConnected, chainId } = useAccount();
-  const { openConnectModal } = useConnectModal();
-  const { disconnect } = useDisconnect();
+  const { writeContract, error } = useWriteContract();
+  const { isConnected, chainId: connectedChainId } = useAccount();
+
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
 
-  const { data } = useQuery(gql(buildRecursiveDirectoryQuery(MAX_DEPTH)));
-  const [directories, setDirectries] = useState<DirectoryType[]>([]);
-  const [selectedDirectory, setSelectedDirectory] = useState<DirectoryType>();
+  const { rootDirectory } = useRootDirectory();
+
+  const [selectedDirectoryPath, setSelectedDirectoryPath] =
+    useState<string>("root");
+  const [selectedDirectory, setSelectedDirectory] =
+    useState<DirectoryType>(rootDirectory);
+
+  const { connectedChainAddresses } = useConnectedChainAddresses();
+  const { selectedDirectoryChainConfig } = useSelectedDirectiryChainConfig(
+    selectedDirectory.path
+  );
+
   const segments = useMemo(() => {
-    if (!selectedDirectory) {
-      return [];
-    }
-    return selectedDirectory.path.split("/").filter((segment) => segment);
-  }, [selectedDirectory]);
+    return selectedDirectoryPath.split("/").filter((segment) => segment);
+  }, [selectedDirectoryPath]);
 
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
     useState(false);
   const [createDirectoryName, setCreateDirectoryName] = useState("");
 
   useEffect(() => {
-    if (data) {
-      console.log("data", data);
-      setDirectries(data.directories);
+    const findDirectory = (
+      dir: DirectoryType,
+      path: string[]
+    ): DirectoryType | null => {
+      if (path.length === 0) return dir;
+      const [currentSegment, ...remainingPath] = path;
+      const subDir = dir.subdirectories.find((d) => d.name === currentSegment);
+      return subDir ? findDirectory(subDir, remainingPath) : null;
+    };
+    const pathSegments = selectedDirectoryPath.split("/").slice(1);
+    const foundDirectory = findDirectory(rootDirectory, pathSegments);
+    if (foundDirectory) {
+      setSelectedDirectory(foundDirectory);
     }
-  }, [data]);
+  }, [selectedDirectoryPath, rootDirectory]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -95,48 +108,30 @@ export function EthDrive({ path }: { path: string }) {
         <Link href="/">
           <div className="flex items-center space-x-2">
             <Image src="/logo.png" alt="logo" width="32" height="32" />
-            <h1 className="text-2xl font-semibold">EthDrive</h1>
+            <h1 className="hidden lg:block text-2xl font-semibold">EthDrive</h1>
           </div>
         </Link>
         <div className="flex items-center space-x-4">
           {isConnected && (
-            <React.Fragment>
-              <Button onClick={() => setIsCreateDirectoryModalOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> New
-              </Button>
-              <User
-                className="h-8 w-8 cursor-pointer"
-                onClick={() => {
-                  disconnect();
-                }}
-              />
-            </React.Fragment>
-          )}
-          {!isConnected && (
-            <Button
-              onClick={() => {
-                if (!openConnectModal) {
-                  throw new Error("openConnectModal is not defined");
-                }
-                openConnectModal();
-              }}
-            >
-              Connect Wallet
+            <Button onClick={() => setIsCreateDirectoryModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> New
             </Button>
           )}
+          <ConnectButton
+            accountStatus="avatar"
+            chainStatus="name"
+            showBalance={false}
+          />
         </div>
       </header>
 
       <div className="flex flex-grow overflow-hidden">
-        <div className="w-64 border-r">
-          <div className="h-full p-4">
-            {directories.map((directory) => (
-              <Directory
-                key={directory.path}
-                directory={directory}
-                onSelected={setSelectedDirectory}
-              />
-            ))}
+        <div className="w-80 border-r">
+          <div className="h-full p-4 space-y-4">
+            <Directory
+              directory={rootDirectory}
+              onSelected={setSelectedDirectoryPath}
+            />
           </div>
         </div>
 
@@ -146,41 +141,63 @@ export function EthDrive({ path }: { path: string }) {
               <BreadcrumbList>
                 <BreadcrumbSeparator>/</BreadcrumbSeparator>
                 {segments.map((segment, i) => {
+                  const fullPath = segments.slice(0, i + 1).join("/");
+
                   return (
                     <React.Fragment key={`breadcrumb_${i}`}>
                       {i > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}
                       <BreadcrumbItem>
-                        <BreadcrumbPage>{segment}</BreadcrumbPage>
+                        {i < segments.length - 1 ? (
+                          <BreadcrumbLink
+                            onClick={() => setSelectedDirectoryPath(fullPath)}
+                            className="cursor-pointer"
+                          >
+                            {segment}
+                          </BreadcrumbLink>
+                        ) : (
+                          <BreadcrumbPage>{segment}</BreadcrumbPage>
+                        )}
                       </BreadcrumbItem>
                     </React.Fragment>
                   );
                 })}
               </BreadcrumbList>
             </Breadcrumb>
-            {selectedDirectory && (
-              <Button
-                onClick={async () => {
-                  if (!chainId) {
-                    throw new Error("chainId is not defined");
-                  }
-                  if (!walletClient) {
-                    throw new Error("walletClient is not defined");
-                  }
-                  if (!publicClient) {
-                    throw new Error("publicClient is not defined");
-                  }
-                  const sender = selectedDirectory.tokenBountAccount as Address;
+
+            <Button
+              disabled={selectedDirectory.depth < 2}
+              onClick={async () => {
+                if (!walletClient) {
+                  throw new Error("walletClient is not defined");
+                }
+                if (!publicClient) {
+                  throw new Error("publicClient is not defined");
+                }
+                if (!connectedChainAddresses) {
+                  throw new Error("connectedChainAddresses is not defined");
+                }
+                if (!selectedDirectoryChainConfig) {
+                  throw new Error("connectedChainConfig is not defined");
+                }
+
+                if (selectedDirectoryChainConfig.chainId !== connectedChainId) {
+                  throw new Error("chainid did not match");
+                }
+
+                const account = selectedDirectory.tokenBoundAccount as Address;
+                // TODO: use actual callData
+                const callData = encodeFunctionData({
+                  abi: ethDriveAccountAbi,
+                  functionName: "execute",
+                  args: [zeroAddress, BigInt(0), "0x"],
+                });
+                if (selectedDirectoryChainConfig.isAccountAbstractionEnabled) {
+                  console.log("account abstraction is enabled");
                   const nonce = await readContract(config, {
                     abi: ethDriveAccountAbi,
-                    address: sender,
+                    address: account,
                     functionName: "getNonce",
                     args: [],
-                  });
-                  // TODO: use actual callData
-                  const callData = encodeFunctionData({
-                    abi: ethDriveAccountAbi,
-                    functionName: "execute",
-                    args: [zeroAddress, BigInt(0), "0x"],
                   });
                   const latestBlock = await publicClient.getBlock();
                   const baseFeePerGas = latestBlock.baseFeePerGas || BigInt(0);
@@ -192,13 +209,13 @@ export function EthDrive({ path }: { path: string }) {
                   const maxFeePerGas =
                     baseFeePerGas + BigInt(maxPriorityFeePerGas);
                   const partialUserOperation = {
-                    sender,
+                    sender: account,
                     nonce: toHex(nonce),
                     initCode: "0x",
                     callData: callData,
                     maxFeePerGas: toHex(maxFeePerGas),
                     maxPriorityFeePerGas: maxPriorityFeePerGas,
-                    paymasterAndData: ethDrivePaymasterAddress,
+                    paymasterAndData: connectedChainAddresses.ethDrivePaymaster,
                     signature: dummySignature,
                   };
                   const {
@@ -235,21 +252,25 @@ export function EthDrive({ path }: { path: string }) {
                     [userOperation, entryPointAddress]
                   );
                   console.log("sendUserOperationRes", sendUserOperationRes);
-                }}
-              >
-                Test
-              </Button>
-            )}
+                } else {
+                  console.log("account abstraction is not enabled");
+                  const txHash = await walletClient.sendTransaction({
+                    to: account,
+                    data: callData,
+                  });
+                  console.log("txHash", txHash);
+                }
+              }}
+            >
+              Test Transaction
+            </Button>
           </div>
           <div>
-            {(selectedDirectory
-              ? selectedDirectory.subdirectories
-              : directories
-            ).map((directory) => (
+            {selectedDirectory.subdirectories.map((directory) => (
               <Card
                 key={directory.path}
                 className="flex items-center p-2 cursor-pointer w-full mb-2"
-                onClick={() => setSelectedDirectory(directory)}
+                onClick={() => setSelectedDirectoryPath(directory.path)}
               >
                 <Folder className="h-4 w-4 mr-2" />
                 <span>{directory.name}</span>
@@ -281,9 +302,12 @@ export function EthDrive({ path }: { path: string }) {
             </Button>
             <Button
               onClick={() => {
+                if (!connectedChainAddresses) {
+                  throw new Error("connectedChainAddresses is not defined");
+                }
                 writeContract({
                   abi: ethDriveAbi,
-                  address: ethDriveAddress,
+                  address: connectedChainAddresses.ethDrive,
                   functionName: "createDirectory",
                   args: [createDirectoryName],
                 });

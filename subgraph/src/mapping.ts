@@ -21,7 +21,7 @@ export function handleCreateRegistry(event: CreateRegistryEvent): void {
       directory.path = path;
       directory.name = segments[i];
       directory.tokenId = tokenId;
-      directory.tokenBountAccount = contract.getTokenBoundAccountFromTokenId(
+      directory.tokenBoundAccount = contract.getTokenBoundAccountFromTokenId(
         tokenId
       );
       directory.holder = contract.ownerOf(tokenId);

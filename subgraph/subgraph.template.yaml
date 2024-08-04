@@ -21,7 +21,7 @@ dataSources:
         - Directory
       abis:
         - name: EthDrive
-          file: ./abis/EthDrive.json
+          file: ../contracts/shared/subgraph/abi/EthDrive.json
       eventHandlers:
         - event: CreateRegistry(string)
           handler: handleCreateRegistry

@@ -1,9 +1,13 @@
-export interface Directory {
+type Directory = {
   path: string;
   name: string;
-  tokenId: string;
-  tokenBountAccount: string;
-  holder: string;
+  tokenId?: string;
+  tokenBoundAccount?: string;
+  holder?: string;
   subdirectories: Directory[];
   depth: number;
-}
+};
+export type SolidityDirectory = Pick<
+  Directory,
+  "path" | "tokenId" | "tokenBoundAccount" | "holder"
+>;
