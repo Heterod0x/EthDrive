@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
@@ -70,7 +71,7 @@ export function EthDrive() {
   const [selectedDirectoryPath, setSelectedDirectoryPath] =
     useState<string>("root");
   const [selectedDirectory, setSelectedDirectory] =
-    useState<DirectoryType | null>();
+    useState<DirectoryType | null>(rootDirectory);
 
   const segments = useMemo(() => {
     return selectedDirectoryPath.split("/").filter((segment) => segment);
@@ -79,6 +80,8 @@ export function EthDrive() {
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
     useState(false);
   const [createDirectoryName, setCreateDirectoryName] = useState("");
+
+  console.log("root", rootDirectory);
 
   useEffect(() => {
     const findDirectory = (
@@ -141,12 +144,16 @@ export function EthDrive() {
                     <React.Fragment key={`breadcrumb_${i}`}>
                       {i > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}
                       <BreadcrumbItem>
-                        <BreadcrumbPage
-                          onClick={() => setSelectedDirectoryPath(fullPath)}
-                          className="cursor-pointer"
-                        >
-                          {segment}
-                        </BreadcrumbPage>
+                        {i < segments.length - 1 ? (
+                          <BreadcrumbLink
+                            onClick={() => setSelectedDirectoryPath(fullPath)}
+                            className="cursor-pointer"
+                          >
+                            {segment}
+                          </BreadcrumbLink>
+                        ) : (
+                          <BreadcrumbPage>{segment}</BreadcrumbPage>
+                        )}
                       </BreadcrumbItem>
                     </React.Fragment>
                   );
@@ -243,10 +250,7 @@ export function EthDrive() {
             </Button>
           </div>
           <div>
-            {(selectedDirectory
-              ? selectedDirectory.subdirectories
-              : rootDirectory.subdirectories
-            ).map((directory) => (
+            {selectedDirectory.subdirectories.map((directory) => (
               <Card
                 key={directory.path}
                 className="flex items-center p-2 cursor-pointer w-full mb-2"

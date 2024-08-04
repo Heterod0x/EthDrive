@@ -24,12 +24,20 @@ export const virtualClient = createPublicClient({
 
 const MAX_DEPTH = 5;
 
-function adjustDepth(directory: Directory, depthAdjustment: number): Directory {
+function adjustDepth(
+  directory: Directory,
+  depthAdjustment: number,
+  parentPath: string = ""
+): Directory {
+  const newPath = parentPath
+    ? `${parentPath}/${directory.name}`
+    : directory.path;
   return {
     ...directory,
+    path: newPath,
     depth: directory.depth + depthAdjustment,
     subdirectories: directory.subdirectories.map((subDir) =>
-      adjustDepth(subDir, depthAdjustment)
+      adjustDepth(subDir, depthAdjustment, newPath)
     ),
   };
 }
@@ -40,8 +48,8 @@ export function useRootDirectory() {
     name: "root",
     subdirectories: [
       {
-        path: "root/virtual",
-        name: "virtual",
+        path: "root/tenderly-virtual-testnet",
+        name: "tenderly-virtual-testnet",
         subdirectories: [],
         depth: 1,
       },
@@ -75,13 +83,7 @@ export function useRootDirectory() {
                 ...chainDir,
                 subdirectories:
                   dataSepolia.directories.map((subDir: Directory) =>
-                    adjustDepth(
-                      {
-                        ...subDir,
-                        path: `root/sepolia${subDir.path}`,
-                      },
-                      2
-                    )
+                    adjustDepth(subDir, 2, "root/sepolia")
                   ) || [],
               }
             : chainDir
@@ -101,22 +103,14 @@ export function useRootDirectory() {
         const virtualDirectories = parseVirtualDirectories(
           virtualPaths as unknown as SolidityDirectory[]
         );
-        console.log("virtualDirectories", virtualDirectories);
-
         setRootDirectory((prev) => ({
           ...prev,
           subdirectories: prev.subdirectories.map((chainDir) =>
-            chainDir.path === "root/virtual"
+            chainDir.path === "root/tenderly-virtual-testnet"
               ? {
                   ...chainDir,
                   subdirectories: virtualDirectories.map((subDir) =>
-                    adjustDepth(
-                      {
-                        ...subDir,
-                        path: `root/virtual${subDir.path}`,
-                      },
-                      2
-                    )
+                    adjustDepth(subDir, 2, "root/tenderly-virtual-testnet")
                   ),
                 }
               : chainDir
