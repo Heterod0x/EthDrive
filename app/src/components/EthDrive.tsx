@@ -62,7 +62,7 @@ const MAX_DEPTH = 5;
 export function EthDrive({ path }: { path: string }) {
   const config = useConfig();
   const { writeContract } = useWriteContract();
-  const { isConnected, chainId } = useAccount();
+  const { isConnected, chainId, chain } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { disconnect } = useDisconnect();
   const { data: walletClient } = useWalletClient();
