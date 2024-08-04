@@ -3,7 +3,6 @@
 import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
 
 import { defineChain } from "viem";
 import { QueryClient } from "@tanstack/react-query";
@@ -13,11 +12,6 @@ import {
   ethDriveVirtualMainnetChainId,
   ethDriveVirtualMainnetRPC,
 } from "../../../contracts/shared/tenderly";
-
-export const apolloClient = new ApolloClient({
-  uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-sepolia/0.0.1/gn",
-  cache: new InMemoryCache(),
-});
 
 const virtual = defineChain({
   id: ethDriveVirtualMainnetChainId,
@@ -51,9 +45,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <ApolloProvider client={apolloClient}>{children}</ApolloProvider>
-        </RainbowKitProvider>
+        <RainbowKitProvider>{children}</RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

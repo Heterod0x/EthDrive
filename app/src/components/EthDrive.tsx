@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Folder, Plus, User } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Folder, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -34,8 +34,6 @@ import { readContract } from "@wagmi/core";
 
 import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
 
-import { buildRecursiveDirectoryQuery } from "@/lib/query";
-
 import { gql, useQuery } from "@apollo/client";
 import Link from "next/link";
 import Image from "next/image";
@@ -57,8 +55,7 @@ import {
   ethDriveAbi,
   ethDriveAccountAbi,
 } from "../../../contracts/shared/app/abi";
-
-const MAX_DEPTH = 5;
+import { useDirectories } from "@/hooks/useDirectories";
 
 export function EthDrive({ path }: { path: string }) {
   const config = useConfig();
@@ -72,8 +69,7 @@ export function EthDrive({ path }: { path: string }) {
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
 
-  const { data } = useQuery(gql(buildRecursiveDirectoryQuery(MAX_DEPTH)));
-  const [directories, setDirectries] = useState<DirectoryType[]>([]);
+  const { directories } = useDirectories();
   const [selectedDirectory, setSelectedDirectory] = useState<DirectoryType>();
   const segments = useMemo(() => {
     if (!selectedDirectory) {
@@ -85,13 +81,6 @@ export function EthDrive({ path }: { path: string }) {
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
     useState(false);
   const [createDirectoryName, setCreateDirectoryName] = useState("");
-
-  useEffect(() => {
-    if (data) {
-      console.log("data", data);
-      setDirectries(data.directories);
-    }
-  }, [data]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -117,15 +106,30 @@ export function EthDrive({ path }: { path: string }) {
       </header>
 
       <div className="flex flex-grow overflow-hidden">
-        <div className="w-64 border-r">
-          <div className="h-full p-4">
-            {directories.map((directory) => (
-              <Directory
-                key={directory.path}
-                directory={directory}
-                onSelected={setSelectedDirectory}
-              />
-            ))}
+        <div className="w-80 border-r">
+          <div className="h-full p-4 space-y-4">
+            <div>
+              <div className="mb-2 text-lg font-medium">
+                Tenderly Virtual Testnet
+              </div>
+              {directories.sepolia.map((directory) => (
+                <Directory
+                  key={directory.path}
+                  directory={directory}
+                  onSelected={setSelectedDirectory}
+                />
+              ))}
+            </div>
+            <div>
+              <div className="mb-2 text-lg font-medium">Sepolia</div>
+              {directories.sepolia.map((directory) => (
+                <Directory
+                  key={directory.path}
+                  directory={directory}
+                  onSelected={setSelectedDirectory}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -185,8 +189,7 @@ export function EthDrive({ path }: { path: string }) {
                     baseFeePerGas + BigInt(maxPriorityFeePerGas);
                   const partialUserOperation = {
                     sender,
-                    // TODO: fix
-                    nonce: toHex(nonce as any),
+                    nonce: toHex(nonce),
                     initCode: "0x",
                     callData: callData,
                     maxFeePerGas: toHex(maxFeePerGas),
@@ -237,7 +240,7 @@ export function EthDrive({ path }: { path: string }) {
           <div>
             {(selectedDirectory
               ? selectedDirectory.subdirectories
-              : directories
+              : directories.sepolia
             ).map((directory) => (
               <Card
                 key={directory.path}

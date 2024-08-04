@@ -1,11 +1,11 @@
 // prettier-ignore
 export const addresses = {
   "9999999": {
-    "ethDrive": "0x8866B847258a994ce45cdF7DEDcFB9b0692cc157",
-    "ethDrivePaymaster": "0xb0Dad68179d4a4714c28f3AdF1A6DD7be1c8b330"
+    "ethDrive": "0x02c3FbE068A558D87f47437fFdb26AF80620dE00",
+    "ethDrivePaymaster": "0x612a145B6Ea8b0E9D97dd8fa75Cb903d020838c1"
   },
   "11155111": {
-    "ethDrive": "0x6f520bc9a7e42d133c33406d853e904068be047d",
-    "ethDrivePaymaster": "0x73f3089e7ee126484a56ed286346b408d5022a35"
+    "ethDrive": "0xABe4A2a7d22387468a6303Bb4ace0153dDb005d1",
+    "ethDrivePaymaster": "0xD515e3dC554850B30Eb64b8EE9995D87B04fa990"
   }
 } as const;

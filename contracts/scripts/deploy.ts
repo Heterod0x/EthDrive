@@ -20,7 +20,10 @@ async function deploy(name: string, args: any[] = []) {
   await contract.waitForDeployment();
   const address = await contract.getAddress();
   console.log(`${name} deployed to:`, address);
-  const abi = ContractFactory.interface.fragments;
+  const abi = require(path.join(
+    __dirname,
+    `../artifacts/contracts/${name}.sol/${name}.json`
+  )).abi;
   return { name, address, abi };
 }
 
