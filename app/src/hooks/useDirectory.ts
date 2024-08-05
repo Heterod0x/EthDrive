@@ -2,7 +2,7 @@ import { ApolloClient, InMemoryCache, gql, useQuery } from "@apollo/client";
 import { useEffect, useMemo, useState } from "react";
 import { Address } from "viem";
 
-import { virtualClient } from "@/lib/chain";
+import { chainPublicClients } from "@/lib/chain";
 import {
   MAX_DIRECTORY_DEPTH,
   adjustDirectoryDepth,
@@ -10,14 +10,12 @@ import {
   formatPathesFromContract,
 } from "@/lib/directory";
 import { CreatedDirectoryFromContract, Directory } from "@/types/directory";
+import { File } from "@/types/file";
 
 import { ethDriveAbi } from "../../../contracts/shared/app/abi";
 import { addresses } from "../../../contracts/shared/app/addresses";
 import { config } from "../../../contracts/shared/app/config";
-
-const getEthAmount = async (chainId: number, account: Address) => {
-  return Math.random() * 100;
-};
+import { ChainId } from "../../../contracts/shared/app/types";
 
 export const sepoliaClient = new ApolloClient({
   uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-sepolia/0.0.1/gn",
@@ -34,14 +32,17 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
         name: "tenderly-virtual-testnet",
         subdirectories: [],
         depth: 1,
+        files: [],
       },
       {
         path: "root/sepolia",
         name: "sepolia",
         subdirectories: [],
         depth: 1,
+        files: [],
       },
     ],
+    files: [],
     depth: 0,
     isExpandedByDefault: true,
   });
@@ -80,13 +81,13 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
   useEffect(() => {
     (async function () {
       try {
-        const createdDirectoriesFromContract = await virtualClient.readContract(
-          {
-            abi: ethDriveAbi,
-            address: addresses["9999999"].ethDrive,
-            functionName: "getCreatedDirectories",
-          },
-        );
+        const createdDirectoriesFromContract = await chainPublicClients[
+          "9999999"
+        ].readContract({
+          abi: ethDriveAbi,
+          address: addresses["9999999"].ethDrive,
+          functionName: "getCreatedDirectories",
+        });
         const directoriesFromContract = formatPathesFromContract(
           createdDirectoriesFromContract as unknown as CreatedDirectoryFromContract[],
         );
@@ -129,6 +130,16 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     return Number(chainId);
   };
 
+  const getFiles = async (directory: Directory): Promise<File[]> => {
+    const _chainId = getChainIdFromPath(directory.path) as number;
+    const chainId = _chainId.toString() as ChainId;
+    const tokenBoundAccount = directory.tokenBoundAccount as Address;
+    const balance = await chainPublicClients[chainId].getBalance({
+      address: tokenBoundAccount,
+    });
+    return [{ type: "native", balance: balance }];
+  };
+
   useEffect(() => {
     const findDirectory = (
       dir: Directory,
@@ -143,13 +154,11 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     const foundDirectory = findDirectory(rootDirectory, pathSegments);
     if (foundDirectory) {
       if (foundDirectory.depth >= 2) {
-        const chainId = getChainIdFromPath(foundDirectory.path) as number;
-        const tokenBoundAccount = foundDirectory.tokenBoundAccount as Address;
         (async () => {
-          const ethAmount = await getEthAmount(chainId, tokenBoundAccount);
+          const files = await getFiles(foundDirectory);
           setSelectedDirectory({
             ...foundDirectory,
-            ethAmount: ethAmount.toString(),
+            files,
           });
         })();
       } else {

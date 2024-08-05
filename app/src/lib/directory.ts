@@ -57,6 +57,7 @@ export function formatPathesFromContract(
           tokenBoundAccount: "",
           holder: "",
           subdirectories: [],
+          files: [],
           depth: index,
         });
       }

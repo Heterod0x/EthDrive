@@ -1,4 +1,5 @@
 import { createPublicClient, defineChain, http } from "viem";
+import { sepolia } from "viem/chains";
 
 import {
   ethDriveVirtualMainnetChainId,
@@ -21,7 +22,13 @@ export const virtualChain = defineChain({
   testnet: true,
 });
 
-export const virtualClient = createPublicClient({
-  chain: virtualChain,
-  transport: http(),
-});
+export const chainPublicClients = {
+  "9999999": createPublicClient({
+    chain: virtualChain,
+    transport: http(),
+  }),
+  "11155111": createPublicClient({
+    chain: sepolia,
+    transport: http(),
+  }),
+};

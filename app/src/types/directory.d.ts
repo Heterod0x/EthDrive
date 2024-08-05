@@ -1,3 +1,5 @@
+import { File } from "@/types/file";
+
 export type Directory = {
   path: string;
   name: string;
@@ -5,7 +7,7 @@ export type Directory = {
   tokenBoundAccount?: string;
   holder?: string;
   subdirectories: Directory[];
-  ethAmount?: string;
+  files: File[];
   depth: number;
   isExpandedByDefault?: boolean;
 };

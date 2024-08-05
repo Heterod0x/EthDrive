@@ -1,8 +1,14 @@
 "use client";
 
-import { Folder } from "lucide-react";
+import { File, Folder } from "lucide-react";
 import React, { useState } from "react";
-import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
+import {
+  Address,
+  encodeFunctionData,
+  formatEther,
+  toHex,
+  zeroAddress,
+} from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 
 import { ExpandableDirectory } from "@/components/ExpandableDirectory";
@@ -47,9 +53,6 @@ export function EthDrive({ path }: { path?: string }) {
     connectedAddressDirectory,
     setSelectedDirectoryPath,
   } = useDirectory(path, connectedAddress);
-
-  console.log("selectedDirectoryPath", selectedDirectoryPath);
-  console.log("selectedDirectory", selectedDirectory);
 
   const {
     chainAddresses: connectedChainAddresses,
@@ -250,11 +253,6 @@ export function EthDrive({ path }: { path?: string }) {
                 <CopyToClipboard text={selectedDirectory.holder} />
               </div>
             )}
-            {selectedDirectory.ethAmount && (
-              <div className="flex items-center">
-                <p className="text-sm">ETH: {selectedDirectory.ethAmount}</p>
-              </div>
-            )}
           </div>
           <div>
             {selectedDirectoryPath == selectedDirectory.path &&
@@ -268,6 +266,20 @@ export function EthDrive({ path }: { path?: string }) {
                   <span>{directory.name}</span>
                 </Card>
               ))}
+            {selectedDirectoryPath == selectedDirectory.path &&
+              selectedDirectory.files
+                .filter((file) => file.balance > 0)
+                .map((file, i) => (
+                  <Card
+                    key={`files_${i}`}
+                    className="flex items-center p-2 cursor-pointer w-full mb-2"
+                  >
+                    <File className="h-4 w-4 mr-2" />
+                    {file.type == "native" && (
+                      <span>{formatEther(file.balance)} ETH</span>
+                    )}
+                  </Card>
+                ))}
           </div>
         </div>
       </div>
