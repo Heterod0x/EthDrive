@@ -220,12 +220,24 @@ export function EthDrive({ path }: { path?: string }) {
               Test Transaction
             </Button>
           </div>
-          {selectedDirectory.tokenBoundAccount && (
-            <div className="flex items-center mb-4">
-              <p className="text-sm">{selectedDirectory.tokenBoundAccount}</p>
-              <CopyToClipboard text={selectedDirectory.tokenBoundAccount} />
-            </div>
-          )}
+          <div className="mb-4 space-y-2">
+            {selectedDirectory.tokenBoundAccount && (
+              <div className="flex items-center">
+                <p className="text-sm">
+                  Token Bound Account: {selectedDirectory.tokenBoundAccount}
+                </p>
+                <CopyToClipboard text={selectedDirectory.tokenBoundAccount} />
+              </div>
+            )}
+            {selectedDirectory.holder && (
+              <div className="flex items-center">
+                <p className="text-sm">
+                  Token Holder: {selectedDirectory.holder}
+                </p>
+                <CopyToClipboard text={selectedDirectory.holder} />
+              </div>
+            )}
+          </div>
           <div>
             {selectedDirectoryPath == selectedDirectory.path &&
               selectedDirectory.subdirectories.map((directory) => (
