@@ -267,19 +267,21 @@ export function EthDrive({ path }: { path?: string }) {
                 </Card>
               ))}
             {selectedDirectoryPath == selectedDirectory.path &&
-              selectedDirectory.files
-                .filter((file) => file.balance > 0)
-                .map((file, i) => (
-                  <Card
-                    key={`files_${i}`}
-                    className="flex items-center p-2 cursor-pointer w-full mb-2"
-                  >
-                    <File className="h-4 w-4 mr-2" />
-                    {file.type == "native" && (
-                      <span>{formatEther(file.balance)} ETH</span>
-                    )}
-                  </Card>
-                ))}
+              selectedDirectory.files.map((file, i) => (
+                <>
+                  {file.balance > 0 && (
+                    <Card
+                      key={`files_${i}`}
+                      className="flex items-center p-2 cursor-pointer w-full mb-2"
+                    >
+                      <File className="h-4 w-4 mr-2" />
+                      {file.type == "native" && (
+                        <span>{formatEther(file.balance)} ETH</span>
+                      )}
+                    </Card>
+                  )}
+                </>
+              ))}
           </div>
         </div>
       </div>
