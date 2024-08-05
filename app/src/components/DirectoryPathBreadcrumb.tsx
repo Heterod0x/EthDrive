@@ -1,5 +1,7 @@
 "use client";
 
+import React, { useMemo } from "react";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,7 +10,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import React, { useMemo } from "react";
 
 export function DirectoryPathBreadcrumb({
   selectedDirectoryPath,

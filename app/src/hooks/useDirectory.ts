@@ -1,19 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
 import { ApolloClient, InMemoryCache, gql, useQuery } from "@apollo/client";
-
-import { ethDriveAbi } from "../../../contracts/shared/app/abi";
-import { addresses } from "../../../contracts/shared/app/addresses";
+import { useEffect, useMemo, useState } from "react";
+import { Address } from "viem";
 
 import { virtualClient } from "@/lib/chain";
-
-import { Directory, SolidityDirectory } from "@/types/directory";
 import {
   MAX_DIRECTORY_DEPTH,
   adjustDirectoryDepth,
   buildRecursiveDirectoryQuery,
   formatPathesFromContract,
 } from "@/lib/directory";
+import { Directory, SolidityDirectory } from "@/types/directory";
 
+import { ethDriveAbi } from "../../../contracts/shared/app/abi";
+import { addresses } from "../../../contracts/shared/app/addresses";
 import { config } from "../../../contracts/shared/app/config";
 
 export const sepoliaClient = new ApolloClient({
@@ -21,7 +20,7 @@ export const sepoliaClient = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-export function useDirectory(path = "root") {
+export function useDirectory(path = "root", connectedAddress?: Address) {
   const [rootDirectory, setRootDirectory] = useState<Directory>({
     path: "root",
     name: "root",
@@ -40,6 +39,7 @@ export function useDirectory(path = "root") {
       },
     ],
     depth: 0,
+    isExpandedByDefault: true,
   });
   const [selectedDirectoryPath, setSelectedDirectoryPath] = useState(path);
   const [selectedDirectory, setSelectedDirectory] =
@@ -51,7 +51,7 @@ export function useDirectory(path = "root") {
     `,
     {
       client: sepoliaClient,
-    }
+    },
   );
 
   useEffect(() => {
@@ -64,10 +64,10 @@ export function useDirectory(path = "root") {
                 ...chainDir,
                 subdirectories:
                   dataSepolia.directories.map((subDir: Directory) =>
-                    adjustDirectoryDepth(subDir, 2, "root/sepolia")
+                    adjustDirectoryDepth(subDir, 2, "root/sepolia"),
                   ) || [],
               }
-            : chainDir
+            : chainDir,
         ),
       }));
     }
@@ -82,7 +82,7 @@ export function useDirectory(path = "root") {
           functionName: "getCreatedDirectories",
         });
         const virtualDirectories = formatPathesFromContract(
-          virtualPaths as unknown as SolidityDirectory[]
+          virtualPaths as unknown as SolidityDirectory[],
         );
         setRootDirectory((prev) => ({
           ...prev,
@@ -94,11 +94,11 @@ export function useDirectory(path = "root") {
                     adjustDirectoryDepth(
                       subDir,
                       2,
-                      "root/tenderly-virtual-testnet"
-                    )
+                      "root/tenderly-virtual-testnet",
+                    ),
                   ),
                 }
-              : chainDir
+              : chainDir,
           ),
         }));
       } catch (error) {
@@ -110,7 +110,7 @@ export function useDirectory(path = "root") {
   useEffect(() => {
     const findDirectory = (
       dir: Directory,
-      path: string[]
+      path: string[],
     ): Directory | null => {
       if (path.length === 0) return dir;
       const [currentSegment, ...remainingPath] = path;
@@ -131,7 +131,7 @@ export function useDirectory(path = "root") {
         acc[details.path] = chainId;
         return acc;
       },
-      {} as { [key: string]: string }
+      {} as { [key: string]: string },
     );
     const chainId = idToChainIdMap[network];
     if (!chainId) {
@@ -140,11 +140,31 @@ export function useDirectory(path = "root") {
     return Number(chainId);
   }, [selectedDirectoryPath]);
 
+  const connectedAddressDirectory = useMemo(() => {
+    const filterConnectedAddressDirectories = (dir: Directory): Directory => {
+      return {
+        ...dir,
+        subdirectories: dir.subdirectories
+          .filter((subDir) => subDir.holder === connectedAddress)
+          .map(filterConnectedAddressDirectories),
+      };
+    };
+    return {
+      ...rootDirectory,
+      subdirectories: rootDirectory.subdirectories.map((chainDir) => ({
+        ...chainDir,
+        subdirectories:
+          filterConnectedAddressDirectories(chainDir).subdirectories,
+      })),
+    };
+  }, [rootDirectory, connectedAddress]);
+
   return {
     rootDirectory,
     selectedDirectory,
     selectedDirectoryPath,
     selectedDirectoryChainId,
+    connectedAddressDirectory,
     setSelectedDirectoryPath,
   };
 }
