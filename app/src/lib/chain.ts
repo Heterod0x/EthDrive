@@ -1,6 +1,7 @@
 import { createPublicClient, defineChain, http } from "viem";
 import { sepolia } from "viem/chains";
 
+import { config } from "../../../contracts/shared/app/config";
 import {
   ethDriveVirtualMainnetChainId,
   ethDriveVirtualMainnetRPC,
@@ -31,4 +32,20 @@ export const chainPublicClients = {
     chain: sepolia,
     transport: http(),
   }),
+};
+
+export const getChainIdFromPath = (path: string) => {
+  const network = path.split("/")[1];
+  const idToChainIdMap = Object.entries(config).reduce(
+    (acc, [chainId, details]) => {
+      acc[details.path] = chainId;
+      return acc;
+    },
+    {} as { [key: string]: string },
+  );
+  const chainId = idToChainIdMap[network];
+  if (!chainId) {
+    return undefined;
+  }
+  return Number(chainId);
 };

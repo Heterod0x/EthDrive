@@ -100,3 +100,13 @@ export function adjustDirectoryDepth(
     ),
   };
 }
+
+export const findDirectory = (
+  dir: Directory,
+  path: string[],
+): Directory | null => {
+  if (path.length === 0) return dir;
+  const [currentSegment, ...remainingPath] = path;
+  const subDir = dir.subdirectories.find((d) => d.name === currentSegment);
+  return subDir ? findDirectory(subDir, remainingPath) : null;
+};

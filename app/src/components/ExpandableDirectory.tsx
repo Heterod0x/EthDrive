@@ -8,9 +8,11 @@ import { Directory } from "@/types/directory";
 export function ExpandableDirectory({
   directory,
   onSelected,
+  onFileDrop,
 }: {
   directory: Directory;
   onSelected: (path: string) => void;
+  onFileDrop: (directoryPath: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(
     directory.isExpandedByDefault || false,
@@ -27,11 +29,23 @@ export function ExpandableDirectory({
     onSelected(directory.path);
   };
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onFileDrop(directory.path);
+  };
+
   return (
     <div>
       <div
         className="flex items-center py-1 cursor-pointer hover:bg-gray-100 rounded"
         onClick={handleDirectoryClick}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
         style={{ paddingLeft: `${directory.depth * 25}px` }}
       >
         {directory.subdirectories.length > 0 ? (
@@ -55,6 +69,7 @@ export function ExpandableDirectory({
               key={subdirectory.path}
               directory={subdirectory}
               onSelected={onSelected}
+              onFileDrop={onFileDrop}
             />
           ))}
         </div>
