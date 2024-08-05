@@ -7,6 +7,7 @@ type Directory = {
   subdirectories: Directory[];
   depth: number;
 };
+
 export type SolidityDirectory = Pick<
   Directory,
   "path" | "tokenId" | "tokenBoundAccount" | "holder"

@@ -1,4 +1,4 @@
-import { defineChain } from "viem";
+import { createPublicClient, defineChain, http } from "viem";
 import {
   ethDriveVirtualMainnetChainId,
   ethDriveVirtualMainnetRPC,
@@ -18,4 +18,9 @@ export const virtualChain = defineChain({
     },
   },
   testnet: true,
+});
+
+export const virtualClient = createPublicClient({
+  chain: virtualChain,
+  transport: http(),
 });
