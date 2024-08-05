@@ -34,6 +34,7 @@ import { useChain } from "@/hooks/useChain";
 import { DirectoryPathBreadcrumb } from "./DirectoryPathBreadcrumb";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
+import { CopyToClipboard } from "./CopyToClipboard";
 
 export function EthDrive({ path }: { path?: string }) {
   const { chainId: connectedChainId } = useAccount();
@@ -42,9 +43,12 @@ export function EthDrive({ path }: { path?: string }) {
   const {
     rootDirectory,
     selectedDirectory,
+    selectedDirectoryPath,
     selectedDirectoryChainId,
     setSelectedDirectoryPath,
   } = useDirectory(path);
+
+  console.log("selectedDirectoryPath", selectedDirectoryPath);
 
   const {
     chainAddresses: connectedChainAddresses,
@@ -79,10 +83,15 @@ export function EthDrive({ path }: { path?: string }) {
 
         <ScrollArea className="p-4 w-full">
           <div className="flex justify-between items-center mb-4">
-            <DirectoryPathBreadcrumb
-              selectedDirectoryPath={selectedDirectory.path}
-              setSelectedDirectoryPath={setSelectedDirectoryPath}
-            />
+            <div className="flex items-center">
+              <DirectoryPathBreadcrumb
+                selectedDirectoryPath={selectedDirectoryPath}
+                setSelectedDirectoryPath={setSelectedDirectoryPath}
+              />
+              <CopyToClipboard
+                text={`${window.location.origin}/${selectedDirectoryPath}`}
+              />
+            </div>
             <Button
               disabled={selectedDirectory.depth < 2}
               onClick={async () => {
@@ -207,16 +216,17 @@ export function EthDrive({ path }: { path?: string }) {
             </Button>
           </div>
           <div>
-            {selectedDirectory.subdirectories.map((directory) => (
-              <Card
-                key={directory.path}
-                className="flex items-center p-2 cursor-pointer w-full mb-2"
-                onClick={() => setSelectedDirectoryPath(directory.path)}
-              >
-                <Folder className="h-4 w-4 mr-2" />
-                <span>{directory.name}</span>
-              </Card>
-            ))}
+            {selectedDirectoryPath == selectedDirectory.path &&
+              selectedDirectory.subdirectories.map((directory) => (
+                <Card
+                  key={directory.path}
+                  className="flex items-center p-2 cursor-pointer w-full mb-2"
+                  onClick={() => setSelectedDirectoryPath(directory.path)}
+                >
+                  <Folder className="h-4 w-4 mr-2" />
+                  <span>{directory.name}</span>
+                </Card>
+              ))}
           </div>
         </ScrollArea>
       </div>

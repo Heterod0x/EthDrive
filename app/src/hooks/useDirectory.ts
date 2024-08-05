@@ -143,6 +143,7 @@ export function useDirectory(path = "root") {
   return {
     rootDirectory,
     selectedDirectory,
+    selectedDirectoryPath,
     selectedDirectoryChainId,
     setSelectedDirectoryPath,
   };
