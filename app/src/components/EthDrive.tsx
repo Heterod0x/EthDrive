@@ -104,35 +104,41 @@ export function EthDrive({ path }: { path?: string }) {
                     args: [],
                   });
                   console.log("nonce", nonce);
+                  // https://www.alchemy.com/blog/user-operation-fee-estimation
                   const latestBlock =
                     await selectedChainPublicClient!.getBlock();
                   console.log("latestBlock", latestBlock);
                   const baseFeePerGas = latestBlock!.baseFeePerGas || BigInt(0);
                   console.log("baseFeePerGas", baseFeePerGas);
-                  const baseFeePerGasHex = toHex(baseFeePerGas);
-                  console.log("baseFeePerGasHex", baseFeePerGasHex);
-                  const maxPriorityFeePerGasRes = await request(
-                    selectedChainConfig!.alchemyChainName,
+                  const adjustedBaseFeePerGas =
+                    baseFeePerGas + baseFeePerGas / BigInt(4); // add 25% overhead;
+                  console.log("adjustedBaseFeePerGas", adjustedBaseFeePerGas);
+
+                  const { result: maxPriorityFeePerGasHex } = await request(
+                    "eth-sepolia",
                     "rundler_maxPriorityFeePerGas",
                     []
                   );
-                  if (maxPriorityFeePerGasRes.error) {
-                    throw new Error(maxPriorityFeePerGasRes.error);
-                  }
-                  const maxPriorityFeePerGas = maxPriorityFeePerGasRes.result;
+                  const maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasHex);
                   console.log("maxPriorityFeePerGas", maxPriorityFeePerGas);
+
+                  const adjustedMaxPriorityFeePerGas =
+                    maxPriorityFeePerGas + maxPriorityFeePerGas / BigInt(10); // add 10% overhead;
+                  console.log(
+                    "adjustedMaxPriorityFeePerGas",
+                    adjustedMaxPriorityFeePerGas
+                  );
                   const maxFeePerGas =
-                    baseFeePerGas + BigInt(maxPriorityFeePerGas);
+                    adjustedBaseFeePerGas +
+                    BigInt(adjustedMaxPriorityFeePerGas);
                   console.log("maxFeePerGas", maxFeePerGas);
-                  const maxFeePerGasHex = toHex(maxFeePerGas);
-                  console.log("maxFeePerGasHex", maxFeePerGasHex);
                   const partialUserOperation = {
                     sender: account,
                     nonce: toHex(nonce),
                     initCode: "0x",
                     callData: callData,
-                    maxFeePerGas: maxFeePerGasHex,
-                    maxPriorityFeePerGas: maxPriorityFeePerGas,
+                    maxFeePerGas: toHex(maxFeePerGas),
+                    maxPriorityFeePerGas: toHex(adjustedMaxPriorityFeePerGas),
                     paymasterAndData: selectedChainAddresses!.ethDrivePaymaster,
                     signature: dummySignature,
                   };
