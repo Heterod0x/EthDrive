@@ -12,7 +12,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { useAccount, useWalletClient } from "wagmi";
 
@@ -37,7 +36,11 @@ import { Sidebar } from "./Sidebar";
 import { CopyToClipboard } from "./CopyToClipboard";
 
 export function EthDrive({ path }: { path?: string }) {
-  const { chainId: connectedChainId } = useAccount();
+  const {
+    isConnected,
+    chainId: connectedChainId,
+    address: connectedAddress,
+  } = useAccount();
   const { data: walletClient } = useWalletClient();
 
   const {
@@ -45,8 +48,9 @@ export function EthDrive({ path }: { path?: string }) {
     selectedDirectory,
     selectedDirectoryPath,
     selectedDirectoryChainId,
+    connectedAddressDirectory,
     setSelectedDirectoryPath,
-  } = useDirectory(path);
+  } = useDirectory(path, connectedAddress);
 
   console.log("selectedDirectoryPath", selectedDirectoryPath);
 
@@ -192,15 +196,27 @@ export function EthDrive({ path }: { path?: string }) {
         }}
       />
 
-      <div className="flex flex-grow overflow-hidden">
+      <div className="flex flex-grow">
         <Sidebar>
-          <ExpandableDirectory
-            directory={rootDirectory}
-            onSelected={setSelectedDirectoryPath}
-          />
+          <div>
+            <p className="font-medium mb-2">All Directories</p>
+            <ExpandableDirectory
+              directory={rootDirectory}
+              onSelected={setSelectedDirectoryPath}
+            />
+          </div>
+          {isConnected && (
+            <div>
+              <p className="font-medium mb-2">My Directories</p>
+              <ExpandableDirectory
+                directory={connectedAddressDirectory}
+                onSelected={setSelectedDirectoryPath}
+              />
+            </div>
+          )}
         </Sidebar>
 
-        <ScrollArea className="p-4 w-full">
+        <div className="p-4 w-full">
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center">
               <DirectoryPathBreadcrumb
@@ -251,7 +267,7 @@ export function EthDrive({ path }: { path?: string }) {
                 </Card>
               ))}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       <Dialog

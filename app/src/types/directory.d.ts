@@ -6,6 +6,7 @@ type Directory = {
   holder?: string;
   subdirectories: Directory[];
   depth: number;
+  isExpandedByDefault?: boolean;
 };
 
 export type SolidityDirectory = Pick<

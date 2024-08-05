@@ -15,13 +15,14 @@ import {
 } from "@/lib/directory";
 
 import { config } from "../../../contracts/shared/app/config";
+import { Address } from "viem";
 
 export const sepoliaClient = new ApolloClient({
   uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-sepolia/0.0.1/gn",
   cache: new InMemoryCache(),
 });
 
-export function useDirectory(path = "root") {
+export function useDirectory(path = "root", connectedAddress?: Address) {
   const [rootDirectory, setRootDirectory] = useState<Directory>({
     path: "root",
     name: "root",
@@ -40,6 +41,7 @@ export function useDirectory(path = "root") {
       },
     ],
     depth: 0,
+    isExpandedByDefault: true,
   });
   const [selectedDirectoryPath, setSelectedDirectoryPath] = useState(path);
   const [selectedDirectory, setSelectedDirectory] =
@@ -140,11 +142,31 @@ export function useDirectory(path = "root") {
     return Number(chainId);
   }, [selectedDirectoryPath]);
 
+  const connectedAddressDirectory = useMemo(() => {
+    const filterConnectedAddressDirectories = (dir: Directory): Directory => {
+      return {
+        ...dir,
+        subdirectories: dir.subdirectories
+          .filter((subDir) => subDir.holder === connectedAddress)
+          .map(filterConnectedAddressDirectories),
+      };
+    };
+    return {
+      ...rootDirectory,
+      subdirectories: rootDirectory.subdirectories.map((chainDir) => ({
+        ...chainDir,
+        subdirectories:
+          filterConnectedAddressDirectories(chainDir).subdirectories,
+      })),
+    };
+  }, [rootDirectory, connectedAddress]);
+
   return {
     rootDirectory,
     selectedDirectory,
     selectedDirectoryPath,
     selectedDirectoryChainId,
+    connectedAddressDirectory,
     setSelectedDirectoryPath,
   };
 }
