@@ -2,18 +2,20 @@ import { ApolloClient, InMemoryCache, gql, useQuery } from "@apollo/client";
 import { useEffect, useMemo, useState } from "react";
 import { Address } from "viem";
 
-import { virtualClient } from "@/lib/chain";
+import { chainPublicClients, getChainIdFromPath } from "@/lib/chain";
 import {
   MAX_DIRECTORY_DEPTH,
   adjustDirectoryDepth,
   buildRecursiveDirectoryQuery,
+  findDirectory,
   formatPathesFromContract,
 } from "@/lib/directory";
-import { Directory, SolidityDirectory } from "@/types/directory";
+import { CreatedDirectoryFromContract, Directory } from "@/types/directory";
+import { File } from "@/types/file";
 
 import { ethDriveAbi } from "../../../contracts/shared/app/abi";
 import { addresses } from "../../../contracts/shared/app/addresses";
-import { config } from "../../../contracts/shared/app/config";
+import { ChainId, isChainId } from "../../../contracts/shared/app/types";
 
 export const sepoliaClient = new ApolloClient({
   uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-sepolia/0.0.1/gn",
@@ -30,14 +32,17 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
         name: "tenderly-virtual-testnet",
         subdirectories: [],
         depth: 1,
+        files: [],
       },
       {
         path: "root/sepolia",
         name: "sepolia",
         subdirectories: [],
         depth: 1,
+        files: [],
       },
     ],
+    files: [],
     depth: 0,
     isExpandedByDefault: true,
   });
@@ -76,13 +81,15 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
   useEffect(() => {
     (async function () {
       try {
-        const virtualPaths = await virtualClient.readContract({
+        const createdDirectoriesFromContract = await chainPublicClients[
+          "9999999"
+        ].readContract({
           abi: ethDriveAbi,
           address: addresses["9999999"].ethDrive,
           functionName: "getCreatedDirectories",
         });
-        const virtualDirectories = formatPathesFromContract(
-          virtualPaths as unknown as SolidityDirectory[],
+        const directoriesFromContract = formatPathesFromContract(
+          createdDirectoriesFromContract as unknown as CreatedDirectoryFromContract[],
         );
         setRootDirectory((prev) => ({
           ...prev,
@@ -90,7 +97,7 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
             chainDir.path === "root/tenderly-virtual-testnet"
               ? {
                   ...chainDir,
-                  subdirectories: virtualDirectories.map((subDir) =>
+                  subdirectories: directoriesFromContract.map((subDir) =>
                     adjustDirectoryDepth(
                       subDir,
                       2,
@@ -107,37 +114,39 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     })();
   }, []);
 
+  const getFiles = async (directory: Directory): Promise<File[]> => {
+    const _chainId = getChainIdFromPath(directory.path);
+    const chainId = _chainId?.toString();
+    if (!isChainId(chainId)) {
+      return [];
+    }
+    const tokenBoundAccount = directory.tokenBoundAccount as Address;
+    const balance = await chainPublicClients[chainId].getBalance({
+      address: tokenBoundAccount,
+    });
+    return [{ type: "native", amount: balance.toString() }];
+  };
+
   useEffect(() => {
-    const findDirectory = (
-      dir: Directory,
-      path: string[],
-    ): Directory | null => {
-      if (path.length === 0) return dir;
-      const [currentSegment, ...remainingPath] = path;
-      const subDir = dir.subdirectories.find((d) => d.name === currentSegment);
-      return subDir ? findDirectory(subDir, remainingPath) : null;
-    };
     const pathSegments = selectedDirectoryPath.split("/").slice(1);
     const foundDirectory = findDirectory(rootDirectory, pathSegments);
     if (foundDirectory) {
-      setSelectedDirectory(foundDirectory);
+      if (foundDirectory.depth >= 2) {
+        (async () => {
+          const files = await getFiles(foundDirectory);
+          setSelectedDirectory({
+            ...foundDirectory,
+            files,
+          });
+        })();
+      } else {
+        setSelectedDirectory(foundDirectory);
+      }
     }
   }, [selectedDirectoryPath, rootDirectory]);
 
   const selectedDirectoryChainId = useMemo(() => {
-    const network = selectedDirectoryPath.split("/")[1];
-    const idToChainIdMap = Object.entries(config).reduce(
-      (acc, [chainId, details]) => {
-        acc[details.path] = chainId;
-        return acc;
-      },
-      {} as { [key: string]: string },
-    );
-    const chainId = idToChainIdMap[network];
-    if (!chainId) {
-      return undefined;
-    }
-    return Number(chainId);
+    return getChainIdFromPath(selectedDirectoryPath);
   }, [selectedDirectoryPath]);
 
   const connectedAddressDirectory = useMemo(() => {

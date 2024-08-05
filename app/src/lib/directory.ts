@@ -1,4 +1,4 @@
-import { Directory, SolidityDirectory } from "@/types/directory";
+import { CreatedDirectoryFromContract, Directory } from "@/types/directory";
 
 export const MAX_DIRECTORY_DEPTH = process.env.NEXT_PUBLIC_MAX_DIRECTORY_DEPTH
   ? Number(process.env.NEXT_PUBLIC_MAX_DIRECTORY_DEPTH)
@@ -41,7 +41,7 @@ export function buildRecursiveDirectoryQuery(maxDepth: number) {
 }
 
 export function formatPathesFromContract(
-  directoriesFromContract: SolidityDirectory[],
+  directoriesFromContract: CreatedDirectoryFromContract[],
 ): Directory[] {
   const directoryMap = new Map<string, Directory>();
   directoriesFromContract.forEach((dir) => {
@@ -57,6 +57,7 @@ export function formatPathesFromContract(
           tokenBoundAccount: "",
           holder: "",
           subdirectories: [],
+          files: [],
           depth: index,
         });
       }
@@ -99,3 +100,13 @@ export function adjustDirectoryDepth(
     ),
   };
 }
+
+export const findDirectory = (
+  dir: Directory,
+  path: string[],
+): Directory | null => {
+  if (path.length === 0) return dir;
+  const [currentSegment, ...remainingPath] = path;
+  const subDir = dir.subdirectories.find((d) => d.name === currentSegment);
+  return subDir ? findDirectory(subDir, remainingPath) : null;
+};
