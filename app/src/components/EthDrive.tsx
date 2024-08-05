@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState } from "react";
 import { Folder, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,13 +37,10 @@ import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
 import Link from "next/link";
 import Image from "next/image";
 
-import { Directory as DirectoryType } from "@/types/directory";
-
 import { Directory } from "@/components/Directory";
 import { Card } from "@/components/ui/card";
 
-import { request } from "@/lib/alchemy";
-import { dummySignature } from "@/lib/constant";
+import { request, dummySignature } from "@/lib/alchemy";
 import { entryPointAbi } from "../../../contracts/shared/app/external-abi";
 import { entryPointAddress } from "../../../contracts/shared/external-contract";
 import { useConnectedChainAddresses } from "@/hooks/useConnectedChainAddresses";
@@ -55,52 +52,31 @@ import {
   ethDriveAbi,
   ethDriveAccountAbi,
 } from "../../../contracts/shared/app/abi";
-import { useRootDirectory } from "@/hooks/useRootDirectory";
+import { useDirectory } from "@/hooks/useDirectory";
 
 export function EthDrive() {
   const config = useConfig();
-  const { writeContract, error } = useWriteContract();
+  const { writeContract } = useWriteContract();
   const { isConnected, chainId: connectedChainId } = useAccount();
 
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
 
-  const { rootDirectory } = useRootDirectory();
-
-  const [selectedDirectoryPath, setSelectedDirectoryPath] =
-    useState<string>("root");
-  const [selectedDirectory, setSelectedDirectory] =
-    useState<DirectoryType>(rootDirectory);
+  const {
+    rootDirectory,
+    selectedDirectory,
+    selectedDirectoryPathSegments,
+    setSelectedDirectoryPath,
+  } = useDirectory();
 
   const { connectedChainAddresses } = useConnectedChainAddresses();
   const { selectedDirectoryChainConfig } = useSelectedDirectiryChainConfig(
     selectedDirectory.path
   );
 
-  const segments = useMemo(() => {
-    return selectedDirectoryPath.split("/").filter((segment) => segment);
-  }, [selectedDirectoryPath]);
-
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
     useState(false);
   const [createDirectoryName, setCreateDirectoryName] = useState("");
-
-  useEffect(() => {
-    const findDirectory = (
-      dir: DirectoryType,
-      path: string[]
-    ): DirectoryType | null => {
-      if (path.length === 0) return dir;
-      const [currentSegment, ...remainingPath] = path;
-      const subDir = dir.subdirectories.find((d) => d.name === currentSegment);
-      return subDir ? findDirectory(subDir, remainingPath) : null;
-    };
-    const pathSegments = selectedDirectoryPath.split("/").slice(1);
-    const foundDirectory = findDirectory(rootDirectory, pathSegments);
-    if (foundDirectory) {
-      setSelectedDirectory(foundDirectory);
-    }
-  }, [selectedDirectoryPath, rootDirectory]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -140,14 +116,16 @@ export function EthDrive() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbSeparator>/</BreadcrumbSeparator>
-                {segments.map((segment, i) => {
-                  const fullPath = segments.slice(0, i + 1).join("/");
+                {selectedDirectoryPathSegments.map((segment, i) => {
+                  const fullPath = selectedDirectoryPathSegments
+                    .slice(0, i + 1)
+                    .join("/");
 
                   return (
                     <React.Fragment key={`breadcrumb_${i}`}>
                       {i > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}
                       <BreadcrumbItem>
-                        {i < segments.length - 1 ? (
+                        {i < selectedDirectoryPathSegments.length - 1 ? (
                           <BreadcrumbLink
                             onClick={() => setSelectedDirectoryPath(fullPath)}
                             className="cursor-pointer"
