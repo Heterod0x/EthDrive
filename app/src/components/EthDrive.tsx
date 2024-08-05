@@ -201,7 +201,7 @@ export function EthDrive({ path }: { path?: string }) {
         </Sidebar>
 
         <ScrollArea className="p-4 w-full">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-2">
             <div className="flex items-center">
               <DirectoryPathBreadcrumb
                 selectedDirectoryPath={selectedDirectoryPath}
@@ -220,6 +220,12 @@ export function EthDrive({ path }: { path?: string }) {
               Test Transaction
             </Button>
           </div>
+          {selectedDirectory.tokenBoundAccount && (
+            <div className="flex items-center mb-4">
+              <p className="text-sm">{selectedDirectory.tokenBoundAccount}</p>
+              <CopyToClipboard text={selectedDirectory.tokenBoundAccount} />
+            </div>
+          )}
           <div>
             {selectedDirectoryPath == selectedDirectory.path &&
               selectedDirectory.subdirectories.map((directory) => (

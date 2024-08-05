@@ -10,7 +10,7 @@ export function CopyToClipboard({ text }: { text: string }) {
       }}
       className="ml-2"
     >
-      <Copy className="h-4 w-4 cursor-pointer" />
+      <Copy className="h-4 w-4 cursor-pointer text-muted-foreground" />
     </div>
   );
 }
