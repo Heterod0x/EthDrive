@@ -49,6 +49,7 @@ export function EthDrive({ path }: { path?: string }) {
   } = useDirectory(path, connectedAddress);
 
   console.log("selectedDirectoryPath", selectedDirectoryPath);
+  console.log("selectedDirectory", selectedDirectory);
 
   const {
     chainAddresses: connectedChainAddresses,
@@ -247,6 +248,11 @@ export function EthDrive({ path }: { path?: string }) {
                   Token Holder: {selectedDirectory.holder}
                 </p>
                 <CopyToClipboard text={selectedDirectory.holder} />
+              </div>
+            )}
+            {selectedDirectory.ethAmount && (
+              <div className="flex items-center">
+                <p className="text-sm">ETH: {selectedDirectory.ethAmount}</p>
               </div>
             )}
           </div>
