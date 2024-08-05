@@ -65,6 +65,125 @@ export function EthDrive({ path }: { path?: string }) {
     useState(false);
   const [createDirectoryName, setCreateDirectoryName] = useState("");
 
+  async function handleDirectoryTransaction() {
+    const account = selectedDirectory.tokenBoundAccount as Address;
+    console.log("account", account);
+    // TODO: use actual callData
+    const callData = encodeFunctionData({
+      abi: ethDriveAccountAbi,
+      functionName: "execute",
+      args: [zeroAddress, BigInt(0), "0x"],
+    });
+    console.log("callData", callData);
+    if (selectedChainConfig!.isAccountAbstractionEnabled) {
+      console.log("account abstraction is enabled");
+      const nonce = await selectedChainPublicClient!.readContract({
+        abi: ethDriveAccountAbi,
+        address: account,
+        functionName: "getNonce",
+        args: [],
+      });
+      console.log("nonce", nonce);
+      // https://www.alchemy.com/blog/user-operation-fee-estimation
+      const latestBlock = await selectedChainPublicClient!.getBlock();
+      console.log("latestBlock", latestBlock);
+      const baseFeePerGas = latestBlock!.baseFeePerGas || BigInt(0);
+      console.log("baseFeePerGas", baseFeePerGas);
+      const adjustedBaseFeePerGas = baseFeePerGas + baseFeePerGas / BigInt(4); // add 25% overhead;
+      console.log("adjustedBaseFeePerGas", adjustedBaseFeePerGas);
+
+      const { result: maxPriorityFeePerGasHex } = await request(
+        "eth-sepolia",
+        "rundler_maxPriorityFeePerGas",
+        []
+      );
+      const maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasHex);
+      console.log("maxPriorityFeePerGas", maxPriorityFeePerGas);
+
+      const adjustedMaxPriorityFeePerGas =
+        maxPriorityFeePerGas + maxPriorityFeePerGas / BigInt(10); // add 10% overhead;
+      console.log("adjustedMaxPriorityFeePerGas", adjustedMaxPriorityFeePerGas);
+      const maxFeePerGas =
+        adjustedBaseFeePerGas + BigInt(adjustedMaxPriorityFeePerGas);
+      console.log("maxFeePerGas", maxFeePerGas);
+      const partialUserOperation = {
+        sender: account,
+        nonce: toHex(nonce),
+        initCode: "0x",
+        callData: callData,
+        maxFeePerGas: toHex(maxFeePerGas),
+        maxPriorityFeePerGas: toHex(adjustedMaxPriorityFeePerGas),
+        paymasterAndData: selectedChainAddresses!.ethDrivePaymaster,
+        signature: dummySignature,
+      };
+      console.log("partialUserOperation", partialUserOperation);
+      const estimateUserOperationGasRes = await request(
+        selectedChainConfig!.alchemyChainName,
+        "eth_estimateUserOperationGas",
+        [partialUserOperation, entryPointAddress]
+      );
+      console.log("estimateUserOperationGasRes", estimateUserOperationGasRes);
+      if (estimateUserOperationGasRes.error) {
+        throw new Error(estimateUserOperationGasRes.error);
+      }
+      const { callGasLimit, preVerificationGas, verificationGasLimit } =
+        estimateUserOperationGasRes.result;
+      console.log("callGasLimit", callGasLimit);
+      console.log("preVerificationGas", preVerificationGas);
+      console.log("verificationGasLimit", verificationGasLimit);
+      const userOperation = {
+        ...partialUserOperation,
+        callGasLimit,
+        preVerificationGas,
+        verificationGasLimit,
+      } as any;
+      console.log("userOperation", userOperation);
+      const userOpHash = await selectedChainPublicClient!.readContract({
+        abi: entryPointAbi,
+        address: entryPointAddress,
+        functionName: "getUserOpHash",
+        args: [userOperation],
+      });
+      console.log("userOpHash", userOpHash);
+      const signature = await walletClient!.signMessage({
+        message: { raw: userOpHash },
+      });
+      console.log("signature", signature);
+      userOperation.signature = signature;
+      console.log("userOperation", userOperation);
+      const sendUserOperationRes = await request(
+        selectedChainConfig!.alchemyChainName,
+        "eth_sendUserOperation",
+        [userOperation, entryPointAddress]
+      );
+      console.log("sendUserOperationRes", sendUserOperationRes);
+      if (sendUserOperationRes.error) {
+        throw new Error(sendUserOperationRes.error);
+      }
+    } else {
+      console.log("account abstraction is not enabled");
+      const txHash = await walletClient!.sendTransaction({
+        to: account,
+        data: callData,
+      });
+      console.log("txHash", txHash);
+    }
+  }
+
+  async function handleUserTransaction() {
+    const callData = encodeFunctionData({
+      abi: ethDriveAbi,
+      functionName: "createDirectory",
+      args: [createDirectoryName],
+    });
+    console.log("callData", callData);
+    const txHash = await walletClient!.sendTransaction({
+      to: connectedChainAddresses!.ethDrive,
+      data: callData,
+    });
+    console.log("txHash", txHash);
+  }
+
   return (
     <div className="flex flex-col h-screen">
       <Header
@@ -94,123 +213,7 @@ export function EthDrive({ path }: { path?: string }) {
             </div>
             <Button
               disabled={selectedDirectory.depth < 2}
-              onClick={async () => {
-                const account = selectedDirectory.tokenBoundAccount as Address;
-                console.log("account", account);
-                // TODO: use actual callData
-                const callData = encodeFunctionData({
-                  abi: ethDriveAccountAbi,
-                  functionName: "execute",
-                  args: [zeroAddress, BigInt(0), "0x"],
-                });
-                console.log("callData", callData);
-                if (selectedChainConfig!.isAccountAbstractionEnabled) {
-                  console.log("account abstraction is enabled");
-                  const nonce = await selectedChainPublicClient!.readContract({
-                    abi: ethDriveAccountAbi,
-                    address: account,
-                    functionName: "getNonce",
-                    args: [],
-                  });
-                  console.log("nonce", nonce);
-                  // https://www.alchemy.com/blog/user-operation-fee-estimation
-                  const latestBlock =
-                    await selectedChainPublicClient!.getBlock();
-                  console.log("latestBlock", latestBlock);
-                  const baseFeePerGas = latestBlock!.baseFeePerGas || BigInt(0);
-                  console.log("baseFeePerGas", baseFeePerGas);
-                  const adjustedBaseFeePerGas =
-                    baseFeePerGas + baseFeePerGas / BigInt(4); // add 25% overhead;
-                  console.log("adjustedBaseFeePerGas", adjustedBaseFeePerGas);
-
-                  const { result: maxPriorityFeePerGasHex } = await request(
-                    "eth-sepolia",
-                    "rundler_maxPriorityFeePerGas",
-                    []
-                  );
-                  const maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasHex);
-                  console.log("maxPriorityFeePerGas", maxPriorityFeePerGas);
-
-                  const adjustedMaxPriorityFeePerGas =
-                    maxPriorityFeePerGas + maxPriorityFeePerGas / BigInt(10); // add 10% overhead;
-                  console.log(
-                    "adjustedMaxPriorityFeePerGas",
-                    adjustedMaxPriorityFeePerGas
-                  );
-                  const maxFeePerGas =
-                    adjustedBaseFeePerGas +
-                    BigInt(adjustedMaxPriorityFeePerGas);
-                  console.log("maxFeePerGas", maxFeePerGas);
-                  const partialUserOperation = {
-                    sender: account,
-                    nonce: toHex(nonce),
-                    initCode: "0x",
-                    callData: callData,
-                    maxFeePerGas: toHex(maxFeePerGas),
-                    maxPriorityFeePerGas: toHex(adjustedMaxPriorityFeePerGas),
-                    paymasterAndData: selectedChainAddresses!.ethDrivePaymaster,
-                    signature: dummySignature,
-                  };
-                  console.log("partialUserOperation", partialUserOperation);
-                  const estimateUserOperationGasRes = await request(
-                    selectedChainConfig!.alchemyChainName,
-                    "eth_estimateUserOperationGas",
-                    [partialUserOperation, entryPointAddress]
-                  );
-                  console.log(
-                    "estimateUserOperationGasRes",
-                    estimateUserOperationGasRes
-                  );
-                  if (estimateUserOperationGasRes.error) {
-                    throw new Error(estimateUserOperationGasRes.error);
-                  }
-                  const {
-                    callGasLimit,
-                    preVerificationGas,
-                    verificationGasLimit,
-                  } = estimateUserOperationGasRes.result;
-                  console.log("callGasLimit", callGasLimit);
-                  console.log("preVerificationGas", preVerificationGas);
-                  console.log("verificationGasLimit", verificationGasLimit);
-                  const userOperation = {
-                    ...partialUserOperation,
-                    callGasLimit,
-                    preVerificationGas,
-                    verificationGasLimit,
-                  } as any;
-                  console.log("userOperation", userOperation);
-                  const userOpHash =
-                    await selectedChainPublicClient!.readContract({
-                      abi: entryPointAbi,
-                      address: entryPointAddress,
-                      functionName: "getUserOpHash",
-                      args: [userOperation],
-                    });
-                  console.log("userOpHash", userOpHash);
-                  const signature = await walletClient!.signMessage({
-                    message: { raw: userOpHash },
-                  });
-                  console.log("signature", signature);
-                  userOperation.signature = signature;
-                  console.log("userOperation", userOperation);
-                  const sendUserOperationRes = await request(
-                    selectedChainConfig!.alchemyChainName,
-                    "eth_sendUserOperation",
-                    [userOperation, entryPointAddress]
-                  );
-                  console.log("sendUserOperationRes", sendUserOperationRes);
-                  if (sendUserOperationRes.error) {
-                    throw new Error(sendUserOperationRes.error);
-                  }
-                } else {
-                  console.log("account abstraction is not enabled");
-                  const txHash = await walletClient!.sendTransaction({
-                    to: account,
-                    data: callData,
-                  });
-                  console.log("txHash", txHash);
-                }
-              }}
+              onClick={handleDirectoryTransaction}
             >
               Test Transaction
             </Button>
@@ -251,23 +254,7 @@ export function EthDrive({ path }: { path?: string }) {
             >
               Cancel
             </Button>
-            <Button
-              onClick={async () => {
-                const callData = encodeFunctionData({
-                  abi: ethDriveAbi,
-                  functionName: "createDirectory",
-                  args: [createDirectoryName],
-                });
-                console.log("callData", callData);
-                const txHash = await walletClient!.sendTransaction({
-                  to: connectedChainAddresses!.ethDrive,
-                  data: callData,
-                });
-                console.log("txHash", txHash);
-              }}
-            >
-              Create
-            </Button>
+            <Button onClick={handleUserTransaction}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
