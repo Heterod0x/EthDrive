@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { useAccount } from "wagmi";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { Plus } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useAccount } from "wagmi";
+
+import { Button } from "@/components/ui/button";
 
 export function Header({
   openCreateDirectoryDialog,

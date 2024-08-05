@@ -1,21 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
 import { ApolloClient, InMemoryCache, gql, useQuery } from "@apollo/client";
-
-import { ethDriveAbi } from "../../../contracts/shared/app/abi";
-import { addresses } from "../../../contracts/shared/app/addresses";
+import { useEffect, useMemo, useState } from "react";
+import { Address } from "viem";
 
 import { virtualClient } from "@/lib/chain";
-
-import { Directory, SolidityDirectory } from "@/types/directory";
 import {
   MAX_DIRECTORY_DEPTH,
   adjustDirectoryDepth,
   buildRecursiveDirectoryQuery,
   formatPathesFromContract,
 } from "@/lib/directory";
+import { Directory, SolidityDirectory } from "@/types/directory";
 
+import { ethDriveAbi } from "../../../contracts/shared/app/abi";
+import { addresses } from "../../../contracts/shared/app/addresses";
 import { config } from "../../../contracts/shared/app/config";
-import { Address } from "viem";
 
 export const sepoliaClient = new ApolloClient({
   uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-sepolia/0.0.1/gn",
@@ -53,7 +51,7 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     `,
     {
       client: sepoliaClient,
-    }
+    },
   );
 
   useEffect(() => {
@@ -66,10 +64,10 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
                 ...chainDir,
                 subdirectories:
                   dataSepolia.directories.map((subDir: Directory) =>
-                    adjustDirectoryDepth(subDir, 2, "root/sepolia")
+                    adjustDirectoryDepth(subDir, 2, "root/sepolia"),
                   ) || [],
               }
-            : chainDir
+            : chainDir,
         ),
       }));
     }
@@ -84,7 +82,7 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
           functionName: "getCreatedDirectories",
         });
         const virtualDirectories = formatPathesFromContract(
-          virtualPaths as unknown as SolidityDirectory[]
+          virtualPaths as unknown as SolidityDirectory[],
         );
         setRootDirectory((prev) => ({
           ...prev,
@@ -96,11 +94,11 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
                     adjustDirectoryDepth(
                       subDir,
                       2,
-                      "root/tenderly-virtual-testnet"
-                    )
+                      "root/tenderly-virtual-testnet",
+                    ),
                   ),
                 }
-              : chainDir
+              : chainDir,
           ),
         }));
       } catch (error) {
@@ -112,7 +110,7 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
   useEffect(() => {
     const findDirectory = (
       dir: Directory,
-      path: string[]
+      path: string[],
     ): Directory | null => {
       if (path.length === 0) return dir;
       const [currentSegment, ...remainingPath] = path;
@@ -133,7 +131,7 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
         acc[details.path] = chainId;
         return acc;
       },
-      {} as { [key: string]: string }
+      {} as { [key: string]: string },
     );
     const chainId = idToChainIdMap[network];
     if (!chainId) {

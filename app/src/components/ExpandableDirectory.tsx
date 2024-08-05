@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
 import { ChevronDown, ChevronRight, Folder } from "lucide-react";
+import React, { useState } from "react";
+
 import { Directory } from "@/types/directory";
 
 export function ExpandableDirectory({
@@ -12,7 +13,7 @@ export function ExpandableDirectory({
   onSelected: (path: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(
-    directory.isExpandedByDefault || false
+    directory.isExpandedByDefault || false,
   );
 
   const handleExpandClick = (e: React.MouseEvent) => {

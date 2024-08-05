@@ -1,39 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
 import { Folder } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useState } from "react";
+import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
+import { useAccount, useWalletClient } from "wagmi";
 
+import { ExpandableDirectory } from "@/components/ExpandableDirectory";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-
-import { useAccount, useWalletClient } from "wagmi";
-
-import { Address, encodeFunctionData, toHex, zeroAddress } from "viem";
-
-import { ExpandableDirectory } from "@/components/ExpandableDirectory";
-import { Card } from "@/components/ui/card";
-
-import { request, dummySignature } from "@/lib/alchemy";
-import { entryPointAbi } from "../../../contracts/shared/app/external-abi";
-import { entryPointAddress } from "../../../contracts/shared/external-contract";
+import { Input } from "@/components/ui/input";
+import { useChain } from "@/hooks/useChain";
+import { useDirectory } from "@/hooks/useDirectory";
+import { dummySignature, request } from "@/lib/alchemy";
 
 import {
   ethDriveAbi,
   ethDriveAccountAbi,
 } from "../../../contracts/shared/app/abi";
-import { useDirectory } from "@/hooks/useDirectory";
-import { useChain } from "@/hooks/useChain";
+import { entryPointAbi } from "../../../contracts/shared/app/external-abi";
+import { entryPointAddress } from "../../../contracts/shared/external-contract";
+import { CopyToClipboard } from "./CopyToClipboard";
 import { DirectoryPathBreadcrumb } from "./DirectoryPathBreadcrumb";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
-import { CopyToClipboard } from "./CopyToClipboard";
 
 export function EthDrive({ path }: { path?: string }) {
   const {
@@ -99,7 +95,7 @@ export function EthDrive({ path }: { path?: string }) {
       const { result: maxPriorityFeePerGasHex } = await request(
         "eth-sepolia",
         "rundler_maxPriorityFeePerGas",
-        []
+        [],
       );
       const maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasHex);
       console.log("maxPriorityFeePerGas", maxPriorityFeePerGas);
@@ -124,7 +120,7 @@ export function EthDrive({ path }: { path?: string }) {
       const estimateUserOperationGasRes = await request(
         selectedChainConfig!.alchemyChainName,
         "eth_estimateUserOperationGas",
-        [partialUserOperation, entryPointAddress]
+        [partialUserOperation, entryPointAddress],
       );
       console.log("estimateUserOperationGasRes", estimateUserOperationGasRes);
       if (estimateUserOperationGasRes.error) {
@@ -158,7 +154,7 @@ export function EthDrive({ path }: { path?: string }) {
       const sendUserOperationRes = await request(
         selectedChainConfig!.alchemyChainName,
         "eth_sendUserOperation",
-        [userOperation, entryPointAddress]
+        [userOperation, entryPointAddress],
       );
       console.log("sendUserOperationRes", sendUserOperationRes);
       if (sendUserOperationRes.error) {

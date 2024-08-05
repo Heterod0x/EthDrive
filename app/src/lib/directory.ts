@@ -7,7 +7,7 @@ export const MAX_DIRECTORY_DEPTH = process.env.NEXT_PUBLIC_MAX_DIRECTORY_DEPTH
 export function buildRecursiveDirectoryQuery(maxDepth: number) {
   function generateSubdirectoryFields(
     currentDepth: number,
-    maxDepth: number
+    maxDepth: number,
   ): string {
     if (currentDepth > maxDepth) {
       return "";
@@ -41,7 +41,7 @@ export function buildRecursiveDirectoryQuery(maxDepth: number) {
 }
 
 export function formatPathesFromContract(
-  directoriesFromContract: SolidityDirectory[]
+  directoriesFromContract: SolidityDirectory[],
 ): Directory[] {
   const directoryMap = new Map<string, Directory>();
   directoriesFromContract.forEach((dir) => {
@@ -85,7 +85,7 @@ export function formatPathesFromContract(
 export function adjustDirectoryDepth(
   directory: Directory,
   depthAdjustment: number,
-  parentPath: string = ""
+  parentPath: string = "",
 ): Directory {
   const newPath = parentPath
     ? `${parentPath}/${directory.name}`
@@ -95,7 +95,7 @@ export function adjustDirectoryDepth(
     path: newPath,
     depth: directory.depth + depthAdjustment,
     subdirectories: directory.subdirectories.map((subDir) =>
-      adjustDirectoryDepth(subDir, depthAdjustment, newPath)
+      adjustDirectoryDepth(subDir, depthAdjustment, newPath),
     ),
   };
 }
