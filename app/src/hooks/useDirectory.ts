@@ -145,7 +145,10 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
       return {
         ...dir,
         subdirectories: dir.subdirectories
-          .filter((subDir) => subDir.holder === connectedAddress)
+          .filter(
+            (subDir) =>
+              subDir.holder?.toLowerCase() === connectedAddress?.toLowerCase(),
+          )
           .map(filterConnectedAddressDirectories),
       };
     };
