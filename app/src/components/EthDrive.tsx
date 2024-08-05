@@ -208,7 +208,9 @@ export function EthDrive({ path }: { path?: string }) {
                 setSelectedDirectoryPath={setSelectedDirectoryPath}
               />
               <CopyToClipboard
-                text={`${window.location.origin}/${selectedDirectoryPath}`}
+                text={`${
+                  typeof window !== "undefined" && window.location.origin
+                }/${selectedDirectoryPath}`}
               />
             </div>
             <Button

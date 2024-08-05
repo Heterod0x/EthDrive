@@ -1,3 +1,5 @@
+"use client";
+
 import { Copy } from "lucide-react";
 
 export function CopyToClipboard({ text }: { text: string }) {
