@@ -63,10 +63,7 @@ export function formatPathesFromContract(
     });
   });
   directoriesFromContract.forEach((dir) => {
-    console.log("dir.path", dir.path);
     const dirObj = directoryMap.get(dir.path);
-    console.log("dirObj", dirObj);
-
     if (dirObj) {
       dirObj.tokenId = dir.tokenId;
       dirObj.tokenBoundAccount = dir.tokenBoundAccount;

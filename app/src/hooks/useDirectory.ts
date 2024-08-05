@@ -14,12 +14,14 @@ import {
   formatPathesFromContract,
 } from "@/lib/directory";
 
+import { config } from "../../../contracts/shared/app/config";
+
 export const sepoliaClient = new ApolloClient({
   uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-sepolia/0.0.1/gn",
   cache: new InMemoryCache(),
 });
 
-export function useDirectory() {
+export function useDirectory(path = "root") {
   const [rootDirectory, setRootDirectory] = useState<Directory>({
     path: "root",
     name: "root",
@@ -39,7 +41,7 @@ export function useDirectory() {
     ],
     depth: 0,
   });
-  const [selectedDirectoryPath, setSelectedDirectoryPath] = useState("root");
+  const [selectedDirectoryPath, setSelectedDirectoryPath] = useState(path);
   const [selectedDirectory, setSelectedDirectory] =
     useState<Directory>(rootDirectory);
 
@@ -122,14 +124,26 @@ export function useDirectory() {
     }
   }, [selectedDirectoryPath, rootDirectory]);
 
-  const selectedDirectoryPathSegments = useMemo(() => {
-    return selectedDirectoryPath.split("/").filter((segment) => segment);
+  const selectedDirectoryChainId = useMemo(() => {
+    const network = selectedDirectoryPath.split("/")[1];
+    const idToChainIdMap = Object.entries(config).reduce(
+      (acc, [chainId, details]) => {
+        acc[details.path] = chainId;
+        return acc;
+      },
+      {} as { [key: string]: string }
+    );
+    const chainId = idToChainIdMap[network];
+    if (!chainId) {
+      return undefined;
+    }
+    return Number(chainId);
   }, [selectedDirectoryPath]);
 
   return {
     rootDirectory,
     selectedDirectory,
-    selectedDirectoryPathSegments,
+    selectedDirectoryChainId,
     setSelectedDirectoryPath,
   };
 }
