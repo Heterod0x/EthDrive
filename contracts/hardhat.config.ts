@@ -33,6 +33,16 @@ const config: HardhatUserConfig = {
       url: "https://rpc.sepolia.org",
       accounts,
     },
+    "optimism-sepolia": {
+      chainId: 11155420,
+      url: "	https://sepolia.optimism.io",
+      accounts,
+    },
+    "base-sepolia": {
+      chainId: 84532,
+      url: "https://sepolia.base.org",
+      accounts,
+    },
   },
   tenderly: {
     project: "hackathon",

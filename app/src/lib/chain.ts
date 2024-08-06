@@ -1,5 +1,5 @@
 import { createPublicClient, defineChain, http } from "viem";
-import { sepolia } from "viem/chains";
+import { baseSepolia, sepolia } from "viem/chains";
 
 import { config } from "../../../contracts/shared/app/config";
 import {
@@ -24,6 +24,10 @@ export const virtualChain = defineChain({
 });
 
 export const chainPublicClients = {
+  "84532": createPublicClient({
+    chain: baseSepolia,
+    transport: http(),
+  }),
   "9999999": createPublicClient({
     chain: virtualChain,
     transport: http(),

@@ -1,7 +1,7 @@
-const validChainIds = ["11155111", "9999999"] as const;
+import { config } from "./config";
 
-export type ChainId = (typeof validChainIds)[number];
+export type ChainId = keyof typeof config;
 
 export function isChainId(chainId?: string): chainId is ChainId {
-  return validChainIds.includes(chainId as ChainId);
+  return Object.keys(config).includes(chainId as ChainId);
 }
