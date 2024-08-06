@@ -203,6 +203,23 @@ export function EthDrive({ path }: { path?: string }) {
     console.log("txHash", txHash);
   }
 
+  async function handleMintMnB() {
+    console.log("minting 1 CCIP BnM token...");
+    const callData = encodeFunctionData({
+      abi: ccipBnMAbi,
+      functionName: "drip",
+      args: [selectedDirectory.tokenBoundAccount as Address],
+    });
+    console.log("callData", callData);
+    const chainId =
+      selectedDirectoryChainId?.toString() as keyof typeof chainlinkCCIPBnMAddresses;
+    const txHash = await walletClient!.sendTransaction({
+      to: chainlinkCCIPBnMAddresses[chainId] as Address,
+      data: callData,
+    });
+    console.log("txHash", txHash);
+  }
+
   const [draggedFile, setDraggedFile] = useState<FileType | null>(null);
 
   const handleDragStart =
@@ -293,7 +310,9 @@ export function EthDrive({ path }: { path?: string }) {
               args: [
                 config[destinationChainId].chainlinkCCIPChainSelecter,
                 destinationDirectory.tokenBoundAccount as Address,
-                addresses[sourceChainId].ethDriveCCIPTokenTransferor as Address,
+                chainlinkCCIPBnMAddresses[
+                  sourceChainId as keyof typeof chainlinkCCIPBnMAddresses
+                ] as Address,
                 BigInt(draggedFile.amount),
               ],
             });
@@ -309,13 +328,11 @@ export function EthDrive({ path }: { path?: string }) {
                   chainlinkCCIPBnMAddresses[
                     sourceChainId as keyof typeof chainlinkCCIPBnMAddresses
                   ] as Address,
-                  // addresses[sourceChainId]
-                  //   .ethDriveCCIPTokenTransferor as Address,
+                  addresses[sourceChainId]
+                    .ethDriveCCIPTokenTransferor as Address,
                 ],
-                [BigInt(0)],
-                // [BigInt(0), BigInt(0)],
-                [approveCallData],
-                // [approveCallData, transferTokensPayNativeCallData],
+                [BigInt(0), BigInt(0)],
+                [approveCallData, transferTokensPayNativeCallData],
               ],
             });
           }
@@ -439,9 +456,17 @@ export function EthDrive({ path }: { path?: string }) {
                 ))}
             </div>
             {selectedDirectory.depth >= 2 && (
-              <Button onClick={() => setIsCreateDirectoryModalOpen(true)}>
-                Add 1 CCIP BnM Token
-              </Button>
+              <div>
+                {selectedChainConfig?.isCCIPEnabled && (
+                  <Button
+                    onClick={() => {
+                      handleMintMnB();
+                    }}
+                  >
+                    Add 1 CCIP BnM Token
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </div>
