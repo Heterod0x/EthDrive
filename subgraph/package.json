@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "prepare:sepolia": "mustache ../contracts/shared/subgraph/network/11155111.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:optimism-sepolia": "mustache ../contracts/shared/subgraph/network/11155420.json subgraph.template.yaml > subgraph.yaml",
     "prepare:base-sepolia": "mustache ../contracts/shared/subgraph/network/84532.json subgraph.template.yaml > subgraph.yaml",
     "codegen": "graph codegen",
     "build": "graph build",

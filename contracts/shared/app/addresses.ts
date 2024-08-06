@@ -11,5 +11,9 @@ export const addresses = {
   "11155111": {
     "ethDrive": "0x178E93a49838D10e46ff6d8999f124965bC4178e",
     "ethDrivePaymaster": "0xFF189E9D4165B2e300107ce158e72F3d6462633a"
+  },
+  "11155420": {
+    "ethDrive": "0x73E5D195B5cf7EB46DE86901AD941986E74921CA",
+    "ethDrivePaymaster": "0x15e4294eA33f19828eCA2B6B2B867aBf0C2509f8"
   }
 } as const;

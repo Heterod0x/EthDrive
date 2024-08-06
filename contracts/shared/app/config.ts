@@ -4,6 +4,11 @@ export const config = {
     alchemyChainName: "base-sepolia",
     isAccountAbstractionEnabled: true,
   },
+  "11155420": {
+    path: "optimism-sepolia",
+    alchemyChainName: "opt-sepolia",
+    isAccountAbstractionEnabled: true,
+  },
   "9999999": {
     path: "tenderly-virtual-testnet",
     alchemyChainName: "",

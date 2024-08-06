@@ -22,6 +22,11 @@ export const sepoliaClient = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
+export const optimismSepoliaClient = new ApolloClient({
+  uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-optimism-sepolia/0.0.1/gn",
+  cache: new InMemoryCache(),
+});
+
 export const baseSepoliaClient = new ApolloClient({
   uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-base-sepolia/0.0.1/gn",
   cache: new InMemoryCache(),
@@ -42,6 +47,13 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
       {
         path: "root/sepolia",
         name: "sepolia",
+        subdirectories: [],
+        depth: 1,
+        files: [],
+      },
+      {
+        path: "root/optimism-sepolia",
+        name: "optimism-sepolia",
         subdirectories: [],
         depth: 1,
         files: [],
@@ -71,6 +83,16 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     },
   );
 
+  const { data: dataOptimismSepolia, loading: loadingOptimismSepolia } =
+    useQuery(
+      gql`
+        ${buildRecursiveDirectoryQuery(MAX_DIRECTORY_DEPTH)}
+      `,
+      {
+        client: optimismSepoliaClient,
+      },
+    );
+
   const { data: dataBaseSepolia, loading: loadingBaseSepolia } = useQuery(
     gql`
       ${buildRecursiveDirectoryQuery(MAX_DIRECTORY_DEPTH)}
@@ -98,6 +120,25 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
       }));
     }
   }, [dataSepolia, loadingSepolia]);
+
+  useEffect(() => {
+    if (!loadingOptimismSepolia) {
+      setRootDirectory((prev) => ({
+        ...prev,
+        subdirectories: prev.subdirectories.map((chainDir) =>
+          chainDir.path === "root/optimism-sepolia"
+            ? {
+                ...chainDir,
+                subdirectories:
+                  dataOptimismSepolia.directories.map((subDir: Directory) =>
+                    adjustDirectoryDepth(subDir, 2, "root/optimism-sepolia"),
+                  ) || [],
+              }
+            : chainDir,
+        ),
+      }));
+    }
+  }, [dataOptimismSepolia, loadingOptimismSepolia]);
 
   useEffect(() => {
     if (!loadingBaseSepolia) {
