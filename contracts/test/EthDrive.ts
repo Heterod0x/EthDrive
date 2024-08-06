@@ -76,6 +76,27 @@ describe("EthDrive", function () {
   });
 
   describe("ERC-6551 Integration", function () {
+    it("Should revert non existing token bound account query", async function () {
+      const { ethDrive, owner } = await loadFixture(deployEthDriveFixture);
+      await expect(
+        ethDrive.read.getTokenIdFromTokenBoundAccount([owner.account.address])
+      ).to.rejectedWith();
+    });
+
+    it("Should match token-bound account and token id", async function () {
+      const { ethDrive } = await loadFixture(deployEthDriveFixture);
+      const path = "folder1/folder2";
+      await ethDrive.write.createDirectory([path]);
+      const tokenId = await ethDrive.read.getTokenIdFromPath([path]);
+      const ethDriveAccountAddress =
+        await ethDrive.read.getTokenBoundAccountFromTokenId([tokenId]);
+      const tokenIdFromTokenBoundAccount =
+        await ethDrive.read.getTokenIdFromTokenBoundAccount([
+          ethDriveAccountAddress,
+        ]);
+      expect(tokenIdFromTokenBoundAccount).to.equal(tokenId);
+    });
+
     it("Should create a token-bound account and check isValidSigner", async function () {
       const { ethDrive, owner } = await loadFixture(deployEthDriveFixture);
       const path = "folder1/folder2";
@@ -83,6 +104,7 @@ describe("EthDrive", function () {
       const tokenId = await ethDrive.read.getTokenIdFromPath([path]);
       const ethDriveAccountAddress =
         await ethDrive.read.getTokenBoundAccountFromTokenId([tokenId]);
+
       const ethDriveAccount = await hre.viem.getContractAt(
         "EthDriveAccount",
         ethDriveAccountAddress

@@ -34,8 +34,15 @@ import {
   ethDriveAbi,
   ethDriveAccountAbi,
 } from "../../../contracts/shared/app/abi";
-import { entryPointAbi } from "../../../contracts/shared/app/external-abi";
+import { addresses } from "../../../contracts/shared/app/addresses";
+import { config } from "../../../contracts/shared/app/config";
+import {
+  ccipBnMAbi,
+  entryPointAbi,
+} from "../../../contracts/shared/app/external-abi";
+import { ethDriveCCIPTokenTransferorAbi } from "../../../contracts/shared/app/optional-abi";
 import { isChainId } from "../../../contracts/shared/app/types";
+import { chainlinkCCIPBnMAddresses } from "../../../contracts/shared/external-contract";
 import { entryPointAddress } from "../../../contracts/shared/external-contract";
 import { CopyToClipboard } from "./CopyToClipboard";
 import { DirectoryPathBreadcrumb } from "./DirectoryPathBreadcrumb";
@@ -79,10 +86,8 @@ export function EthDrive({ path }: { path?: string }) {
       console.log("callData", callData);
       const account = selectedDirectory.tokenBoundAccount as Address;
       console.log("account", account);
-
       if (selectedChainConfig?.isAccountAbstractionEnabled) {
         console.log("account abstraction is enabled");
-
         const nonce = await selectedChainPublicClient!.readContract({
           abi: ethDriveAccountAbi,
           address: account,
@@ -90,16 +95,12 @@ export function EthDrive({ path }: { path?: string }) {
           args: [],
         });
         console.log("nonce", nonce);
-
         const latestBlock = await selectedChainPublicClient!.getBlock();
         console.log("latestBlock", latestBlock);
-
         const baseFeePerGas = latestBlock!.baseFeePerGas || BigInt(0);
         console.log("baseFeePerGas", baseFeePerGas);
-
         const adjustedBaseFeePerGas = baseFeePerGas + baseFeePerGas / BigInt(4); // add 25% overhead;
         console.log("adjustedBaseFeePerGas", adjustedBaseFeePerGas);
-
         const { result: maxPriorityFeePerGasHex } = await request(
           "eth-sepolia",
           "rundler_maxPriorityFeePerGas",
@@ -107,18 +108,15 @@ export function EthDrive({ path }: { path?: string }) {
         );
         const maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasHex);
         console.log("maxPriorityFeePerGas", maxPriorityFeePerGas);
-
         const adjustedMaxPriorityFeePerGas =
-          maxPriorityFeePerGas + maxPriorityFeePerGas / BigInt(10); // add 10% overhead;
+          maxPriorityFeePerGas + maxPriorityFeePerGas / BigInt(4); // add 25% overhead;
         console.log(
           "adjustedMaxPriorityFeePerGas",
           adjustedMaxPriorityFeePerGas,
         );
-
         const maxFeePerGas =
           adjustedBaseFeePerGas + BigInt(adjustedMaxPriorityFeePerGas);
         console.log("maxFeePerGas", maxFeePerGas);
-
         const partialUserOperation = {
           sender: account,
           nonce: toHex(nonce),
@@ -130,34 +128,27 @@ export function EthDrive({ path }: { path?: string }) {
           signature: dummySignature,
         };
         console.log("partialUserOperation", partialUserOperation);
-
         const estimateUserOperationGasRes = await request(
           selectedChainConfig!.alchemyChainName,
           "eth_estimateUserOperationGas",
           [partialUserOperation, entryPointAddress],
         );
         console.log("estimateUserOperationGasRes", estimateUserOperationGasRes);
-
         if (estimateUserOperationGasRes.error) {
           throw new Error(estimateUserOperationGasRes.error);
         }
-
         const { callGasLimit, preVerificationGas, verificationGasLimit } =
           estimateUserOperationGasRes.result;
-
         console.log("callGasLimit", callGasLimit);
         console.log("preVerificationGas", preVerificationGas);
         console.log("verificationGasLimit", verificationGasLimit);
-
         const userOperation = {
           ...partialUserOperation,
           callGasLimit,
           preVerificationGas,
           verificationGasLimit,
         } as any;
-
         console.log("userOperation", userOperation);
-
         const userOpHash = await selectedChainPublicClient!.readContract({
           abi: entryPointAbi,
           address: entryPointAddress,
@@ -165,22 +156,18 @@ export function EthDrive({ path }: { path?: string }) {
           args: [userOperation],
         });
         console.log("userOpHash", userOpHash);
-
         const signature = await walletClient!.signMessage({
           message: { raw: userOpHash },
         });
         console.log("signature", signature);
-
         userOperation.signature = signature;
         console.log("userOperation", userOperation);
-
         const sendUserOperationRes = await request(
           selectedChainConfig!.alchemyChainName,
           "eth_sendUserOperation",
           [userOperation, entryPointAddress],
         );
         console.log("sendUserOperationRes", sendUserOperationRes);
-
         if (sendUserOperationRes.error) {
           throw new Error(sendUserOperationRes.error);
         }
@@ -197,12 +184,8 @@ export function EthDrive({ path }: { path?: string }) {
       selectedDirectory.tokenBoundAccount,
       selectedChainConfig,
       selectedChainPublicClient,
-      ethDriveAccountAbi,
       selectedChainAddresses,
-      dummySignature,
       walletClient,
-      entryPointAbi,
-      entryPointAddress,
     ],
   );
 
@@ -215,6 +198,23 @@ export function EthDrive({ path }: { path?: string }) {
     console.log("callData", callData);
     const txHash = await walletClient!.sendTransaction({
       to: connectedChainAddresses!.ethDrive,
+      data: callData,
+    });
+    console.log("txHash", txHash);
+  }
+
+  async function handleMintMnB() {
+    console.log("minting 1 CCIP BnM token...");
+    const callData = encodeFunctionData({
+      abi: ccipBnMAbi,
+      functionName: "drip",
+      args: [selectedDirectory.tokenBoundAccount as Address],
+    });
+    console.log("callData", callData);
+    const chainId =
+      selectedDirectoryChainId?.toString() as keyof typeof chainlinkCCIPBnMAddresses;
+    const txHash = await walletClient!.sendTransaction({
+      to: chainlinkCCIPBnMAddresses[chainId] as Address,
       data: callData,
     });
     console.log("txHash", txHash);
@@ -235,32 +235,113 @@ export function EthDrive({ path }: { path?: string }) {
   const handleFileDrop = useCallback(
     (directoryPath: string) => {
       if (draggedFile) {
-        const _chainId = getChainIdFromPath(directoryPath);
-        if (selectedDirectoryChainId === _chainId) {
-          const chainId = _chainId?.toString();
-          if (isChainId(chainId)) {
-            const directory = findDirectory(
-              rootDirectory,
-              directoryPath.split("/").slice(1),
+        console.log("draggedFile", draggedFile);
+        const sourceChainId = draggedFile.chainId?.toString();
+        console.log("sourceChainId", sourceChainId);
+        const destinationChainId =
+          getChainIdFromPath(directoryPath)?.toString();
+        console.log("destinationChainId", destinationChainId);
+        if (!isChainId(sourceChainId) || !isChainId(destinationChainId)) {
+          throw new Error("Invalid chain ID");
+        }
+        const destinationDirectory = findDirectory(
+          rootDirectory,
+          directoryPath.split("/").slice(1),
+        );
+        console.log("destinationDirectory", destinationDirectory);
+        if (!destinationDirectory) {
+          throw new Error("Destination directory not found");
+        }
+        if (!destinationDirectory.tokenBoundAccount) {
+          throw new Error(
+            "Destination directory does not have a token bound account",
+          );
+        }
+        let callData = "";
+        if (draggedFile.type == "native") {
+          console.log("create execute call data for ETH transfer...");
+          callData = encodeFunctionData({
+            abi: ethDriveAccountAbi,
+            functionName: "execute",
+            args: [
+              destinationDirectory.tokenBoundAccount as Address,
+              BigInt(draggedFile.amount),
+              "0x",
+            ],
+          });
+        } else if (draggedFile.type == "ccip") {
+          console.log("create execute call data for CCIP transfer...");
+          if (sourceChainId == destinationChainId) {
+            console.log("same chain transfer");
+            const transferCallData = encodeFunctionData({
+              abi: ccipBnMAbi,
+              functionName: "transfer",
+              args: [
+                destinationDirectory.tokenBoundAccount as Address,
+                BigInt(draggedFile.amount),
+              ],
+            });
+            console.log("transferCallData", transferCallData);
+            callData = encodeFunctionData({
+              abi: ethDriveAccountAbi,
+              functionName: "execute",
+              args: [
+                chainlinkCCIPBnMAddresses[
+                  sourceChainId as keyof typeof chainlinkCCIPBnMAddresses
+                ] as Address,
+                BigInt(0),
+                transferCallData,
+              ],
+            });
+          } else {
+            console.log("cross chain transfer");
+            const approveCallData = encodeFunctionData({
+              abi: ccipBnMAbi,
+              functionName: "approve",
+              args: [
+                addresses[sourceChainId].ethDriveCCIPTokenTransferor as Address,
+                BigInt(draggedFile.amount),
+              ],
+            });
+            console.log("approveCallData", approveCallData);
+            const transferTokensPayNativeCallData = encodeFunctionData({
+              abi: ethDriveCCIPTokenTransferorAbi,
+              functionName: "transferTokensPayNative",
+              args: [
+                config[destinationChainId].chainlinkCCIPChainSelecter,
+                destinationDirectory.tokenBoundAccount as Address,
+                chainlinkCCIPBnMAddresses[
+                  sourceChainId as keyof typeof chainlinkCCIPBnMAddresses
+                ] as Address,
+                BigInt(draggedFile.amount),
+              ],
+            });
+            console.log(
+              "transferTokensPayNativeCallData",
+              transferTokensPayNativeCallData,
             );
-            if (directory && directory.tokenBoundAccount) {
-              const callData = encodeFunctionData({
-                abi: ethDriveAccountAbi,
-                functionName: "execute",
-                args: [
-                  directory.tokenBoundAccount as Address,
-                  BigInt(draggedFile.amount),
-                  "0x",
+            callData = encodeFunctionData({
+              abi: ethDriveAccountAbi,
+              functionName: "executeBatch",
+              args: [
+                [
+                  chainlinkCCIPBnMAddresses[
+                    sourceChainId as keyof typeof chainlinkCCIPBnMAddresses
+                  ] as Address,
+                  addresses[sourceChainId]
+                    .ethDriveCCIPTokenTransferor as Address,
                 ],
-              });
-              handleDirectoryTransaction(callData);
-            }
+                [BigInt(0), BigInt(0)],
+                [approveCallData, transferTokensPayNativeCallData],
+              ],
+            });
           }
         }
+        handleDirectoryTransaction(callData as Hex);
         setDraggedFile(null);
       }
     },
-    [draggedFile, selectedDirectoryChainId, rootDirectory, ethDriveAccountAbi],
+    [draggedFile, rootDirectory],
   );
 
   return (
@@ -339,36 +420,54 @@ export function EthDrive({ path }: { path?: string }) {
             )}
           </div>
           <div>
-            {selectedDirectoryPath == selectedDirectory.path &&
-              selectedDirectory.subdirectories.map((directory) => (
-                <Card
-                  key={directory.path}
-                  className="flex items-center p-2 cursor-pointer w-full mb-2"
-                  onClick={() => setSelectedDirectoryPath(directory.path)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleFileDrop(directory.path)}
-                >
-                  <Folder className="h-4 w-4 mr-2" />
-                  <span>{directory.name}</span>
-                </Card>
-              ))}
-            {selectedDirectoryPath == selectedDirectory.path &&
-              selectedDirectory.files.map((file, i) => (
-                <React.Fragment key={`files_${i}`}>
-                  {file.amount !== "0" && (
-                    <Card
-                      className="flex items-center p-2 cursor-pointer w-full mb-2"
-                      draggable
-                      onDragStart={handleDragStart(file)}
-                    >
-                      <File className="h-4 w-4 mr-2" />
-                      {file.type == "native" && (
-                        <span>{formatEther(BigInt(file.amount))} ETH</span>
-                      )}
-                    </Card>
-                  )}
-                </React.Fragment>
-              ))}
+            <div className="mb-4">
+              {selectedDirectoryPath == selectedDirectory.path &&
+                selectedDirectory.subdirectories.map((directory) => (
+                  <Card
+                    key={directory.path}
+                    className="flex items-center p-2 cursor-pointer w-full mb-2"
+                    onClick={() => setSelectedDirectoryPath(directory.path)}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleFileDrop(directory.path)}
+                  >
+                    <Folder className="h-4 w-4 mr-2" />
+                    <span>{directory.name}</span>
+                  </Card>
+                ))}
+              {selectedDirectoryPath == selectedDirectory.path &&
+                selectedDirectory.files.map((file, i) => (
+                  <React.Fragment key={`files_${i}`}>
+                    {file.amount !== "0" && (
+                      <Card
+                        className="flex items-center p-2 cursor-pointer w-full mb-2"
+                        draggable
+                        onDragStart={handleDragStart(file)}
+                      >
+                        <File className="h-4 w-4 mr-2" />
+                        {file.type == "native" && (
+                          <span>{formatEther(BigInt(file.amount))} ETH</span>
+                        )}
+                        {file.type == "ccip" && (
+                          <span>{formatEther(BigInt(file.amount))} BnM</span>
+                        )}
+                      </Card>
+                    )}
+                  </React.Fragment>
+                ))}
+            </div>
+            {selectedDirectory.depth >= 2 && (
+              <div>
+                {selectedChainConfig?.isCCIPEnabled && (
+                  <Button
+                    onClick={() => {
+                      handleMintMnB();
+                    }}
+                  >
+                    Add 1 CCIP BnM Token
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

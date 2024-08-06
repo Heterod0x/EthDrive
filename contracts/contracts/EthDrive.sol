@@ -89,6 +89,15 @@ contract EthDrive is ERC721, Ownable {
             );
     }
 
+    function getTokenIdFromTokenBoundAccount(
+        address account
+    ) public view returns (uint256) {
+        (, , uint256 tokenId) = EthDriveAccount(
+            payable(address(uint160(account)))
+        ).token();
+        return tokenId;
+    }
+
     function _beforeTokenTransfer(
         address from,
         address to,

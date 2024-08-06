@@ -314,6 +314,25 @@ export const ethDriveAbi = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "getTokenIdFromTokenBoundAccount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "owner",
         "type": "address"
       },
@@ -980,3 +999,4 @@ export const ethDriveAccountAbi = [
     "type": "receive"
   }
 ] as const;
+    

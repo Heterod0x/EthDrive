@@ -9,6 +9,7 @@ import {
 } from "./shared/tenderly";
 import { defaultSignerPrivateKey } from "./shared/key";
 
+import "./tasks/depositToCCIPTokenTransferor";
 import "./tasks/depositToPaymaster";
 
 tenderly.setup({ automaticVerifications: true });
@@ -31,6 +32,16 @@ const config: HardhatUserConfig = {
     sepolia: {
       chainId: 11155111,
       url: "https://rpc.sepolia.org",
+      accounts,
+    },
+    "optimism-sepolia": {
+      chainId: 11155420,
+      url: "	https://sepolia.optimism.io",
+      accounts,
+    },
+    "base-sepolia": {
+      chainId: 84532,
+      url: "https://sepolia.base.org",
       accounts,
     },
   },

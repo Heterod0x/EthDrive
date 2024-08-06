@@ -1,7 +1,9 @@
 import { ethers, network } from "hardhat";
 import {
+  chainlinkCCIPRouterAddresses,
   entryPointAddress,
   erc6551RegistryAddress,
+  chainlinkLINKAddresses,
 } from "../shared/external-contract";
 
 import fs from "fs";
@@ -13,7 +15,13 @@ function ensureDirExists(dir: string) {
   }
 }
 
-async function deploy(name: string, args: any[] = []) {
+interface Contract {
+  name: string;
+  address: string;
+  abi: any;
+}
+
+async function deploy(name: string, args: any[] = []): Promise<Contract> {
   console.log(`Deploying ${name}...`);
   const ContractFactory = await ethers.getContractFactory(name);
   const contract = await ContractFactory.deploy(...args);
@@ -28,6 +36,11 @@ async function deploy(name: string, args: any[] = []) {
 }
 
 async function main() {
+  const chainId = network.config.chainId?.toString();
+  if (!chainId) {
+    throw new Error("Chain ID is not set in Hardhat config file");
+  }
+
   let blockNumber: number | undefined;
 
   if (!process.env.SKIP_CONFIG_UPDATE) {
@@ -47,12 +60,30 @@ async function main() {
     entryPointAddress,
   ]);
 
-  if (!process.env.SKIP_CONFIG_UPDATE) {
-    const chainId = network.config.chainId?.toString();
-    if (!chainId) {
-      throw new Error("Chain ID is not set in Hardhat config file");
-    }
+  let ethDriveCCIPTokenTransferor: Contract | undefined;
+  if (
+    chainlinkCCIPRouterAddresses[
+      chainId as keyof typeof chainlinkCCIPRouterAddresses
+    ]
+  ) {
+    const ccipRouterAddress =
+      chainlinkCCIPRouterAddresses[
+        chainId as keyof typeof chainlinkCCIPRouterAddresses
+      ];
 
+    const linkAddress =
+      chainlinkLINKAddresses[
+        chainId as keyof typeof chainlinkCCIPRouterAddresses
+      ];
+
+    ethDriveCCIPTokenTransferor = await deploy("EthDriveCCIPTokenTransferor", [
+      ccipRouterAddress,
+      linkAddress,
+      ethDrive.address,
+    ]);
+  }
+
+  if (!process.env.SKIP_CONFIG_UPDATE) {
     const sharedDir = path.join(__dirname, "../shared");
     ensureDirExists(sharedDir);
 
@@ -85,6 +116,7 @@ export const ethDriveAccountAbi = ${JSON.stringify(
       null,
       2
     )} as const;
+    
 `;
     fs.writeFileSync(path.join(appDir, "abi.ts"), appAbiContent);
 
@@ -113,6 +145,9 @@ export const ethDriveAccountAbi = ${JSON.stringify(
         [chainId]: {
           ethDrive: ethDrive.address,
           ethDrivePaymaster: ethDrivePaymaster.address,
+          ethDriveCCIPTokenTransferor: ethDriveCCIPTokenTransferor
+            ? ethDriveCCIPTokenTransferor.address
+            : "",
         },
       };
 

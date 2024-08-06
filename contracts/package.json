@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@account-abstraction/contracts": "0.6.0",
+    "@chainlink/contracts-ccip": "^1.4.0",
     "@openzeppelin/contracts": "4.2.0"
   }
 }

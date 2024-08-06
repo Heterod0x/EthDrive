@@ -1,5 +1,5 @@
 import { ApolloClient, InMemoryCache, gql, useQuery } from "@apollo/client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Address } from "viem";
 
 import { chainPublicClients, getChainIdFromPath } from "@/lib/chain";
@@ -15,10 +15,23 @@ import { File } from "@/types/file";
 
 import { ethDriveAbi } from "../../../contracts/shared/app/abi";
 import { addresses } from "../../../contracts/shared/app/addresses";
-import { ChainId, isChainId } from "../../../contracts/shared/app/types";
+import { config } from "../../../contracts/shared/app/config";
+import { ccipBnMAbi } from "../../../contracts/shared/app/external-abi";
+import { isChainId } from "../../../contracts/shared/app/types";
+import { chainlinkCCIPBnMAddresses } from "../../../contracts/shared/external-contract";
 
 export const sepoliaClient = new ApolloClient({
   uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-sepolia/0.0.1/gn",
+  cache: new InMemoryCache(),
+});
+
+export const optimismSepoliaClient = new ApolloClient({
+  uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-optimism-sepolia/0.0.1/gn",
+  cache: new InMemoryCache(),
+});
+
+export const baseSepoliaClient = new ApolloClient({
+  uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-base-sepolia/0.0.1/gn",
   cache: new InMemoryCache(),
 });
 
@@ -41,6 +54,20 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
         depth: 1,
         files: [],
       },
+      {
+        path: "root/optimism-sepolia",
+        name: "optimism-sepolia",
+        subdirectories: [],
+        depth: 1,
+        files: [],
+      },
+      {
+        path: "root/base-sepolia",
+        name: "base-sepolia",
+        subdirectories: [],
+        depth: 1,
+        files: [],
+      },
     ],
     files: [],
     depth: 0,
@@ -56,6 +83,25 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     `,
     {
       client: sepoliaClient,
+    },
+  );
+
+  const { data: dataOptimismSepolia, loading: loadingOptimismSepolia } =
+    useQuery(
+      gql`
+        ${buildRecursiveDirectoryQuery(MAX_DIRECTORY_DEPTH)}
+      `,
+      {
+        client: optimismSepoliaClient,
+      },
+    );
+
+  const { data: dataBaseSepolia, loading: loadingBaseSepolia } = useQuery(
+    gql`
+      ${buildRecursiveDirectoryQuery(MAX_DIRECTORY_DEPTH)}
+    `,
+    {
+      client: baseSepoliaClient,
     },
   );
 
@@ -77,6 +123,44 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
       }));
     }
   }, [dataSepolia, loadingSepolia]);
+
+  useEffect(() => {
+    if (!loadingOptimismSepolia) {
+      setRootDirectory((prev) => ({
+        ...prev,
+        subdirectories: prev.subdirectories.map((chainDir) =>
+          chainDir.path === "root/optimism-sepolia"
+            ? {
+                ...chainDir,
+                subdirectories:
+                  dataOptimismSepolia.directories.map((subDir: Directory) =>
+                    adjustDirectoryDepth(subDir, 2, "root/optimism-sepolia"),
+                  ) || [],
+              }
+            : chainDir,
+        ),
+      }));
+    }
+  }, [dataOptimismSepolia, loadingOptimismSepolia]);
+
+  useEffect(() => {
+    if (!loadingBaseSepolia) {
+      setRootDirectory((prev) => ({
+        ...prev,
+        subdirectories: prev.subdirectories.map((chainDir) =>
+          chainDir.path === "root/base-sepolia"
+            ? {
+                ...chainDir,
+                subdirectories:
+                  dataBaseSepolia.directories.map((subDir: Directory) =>
+                    adjustDirectoryDepth(subDir, 2, "root/base-sepolia"),
+                  ) || [],
+              }
+            : chainDir,
+        ),
+      }));
+    }
+  }, [dataBaseSepolia, loadingBaseSepolia]);
 
   useEffect(() => {
     (async function () {
@@ -114,18 +198,56 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     })();
   }, []);
 
-  const getFiles = async (directory: Directory): Promise<File[]> => {
-    const _chainId = getChainIdFromPath(directory.path);
-    const chainId = _chainId?.toString();
-    if (!isChainId(chainId)) {
-      return [];
-    }
-    const tokenBoundAccount = directory.tokenBoundAccount as Address;
-    const balance = await chainPublicClients[chainId].getBalance({
-      address: tokenBoundAccount,
-    });
-    return [{ type: "native", amount: balance.toString() }];
-  };
+  const getFiles = useCallback(
+    async (directory: Directory): Promise<File[]> => {
+      const _chainId = getChainIdFromPath(directory.path);
+      const chainId = _chainId?.toString();
+      if (!isChainId(chainId)) {
+        return [];
+      }
+      const tokenBoundAccount = directory.tokenBoundAccount as Address;
+      const files: File[] = [];
+      const balance = await chainPublicClients[chainId].getBalance({
+        address: tokenBoundAccount,
+      });
+      if (balance > 0) {
+        files.push({
+          type: "native",
+          chainId: _chainId,
+          address: "",
+          amount: balance.toString(),
+        });
+      }
+      if (
+        connectedAddress &&
+        config[chainId].isCCIPEnabled &&
+        chainlinkCCIPBnMAddresses[
+          chainId as keyof typeof chainlinkCCIPBnMAddresses
+        ]
+      ) {
+        console.log("connectedAddress", connectedAddress);
+        const chainlinkCCIPBnMAddress = chainlinkCCIPBnMAddresses[
+          chainId as keyof typeof chainlinkCCIPBnMAddresses
+        ] as Address;
+        const ccipBalance = await chainPublicClients[chainId].readContract({
+          abi: ccipBnMAbi,
+          address: chainlinkCCIPBnMAddress,
+          functionName: "balanceOf",
+          args: [tokenBoundAccount],
+        });
+        if (ccipBalance > 0) {
+          files.push({
+            type: "ccip",
+            chainId: _chainId,
+            address: chainlinkCCIPBnMAddress,
+            amount: ccipBalance.toString(),
+          });
+        }
+      }
+      return files;
+    },
+    [connectedAddress],
+  );
 
   useEffect(() => {
     const pathSegments = selectedDirectoryPath.split("/").slice(1);
