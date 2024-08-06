@@ -9,6 +9,7 @@ import {
 } from "./shared/tenderly";
 import { defaultSignerPrivateKey } from "./shared/key";
 
+import "./tasks/depositToCCIPTokenTransferor";
 import "./tasks/depositToPaymaster";
 
 tenderly.setup({ automaticVerifications: true });

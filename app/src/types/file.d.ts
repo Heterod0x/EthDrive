@@ -1,6 +1,8 @@
-export type FileType = "native" | "erc20" | "erc721" | "erc1155";
+export type FileType = "native" | "ccip";
 
 export type File = {
   type: FileType;
+  chainId?: number;
+  address: string;
   amount: string;
 };
