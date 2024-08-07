@@ -18,7 +18,10 @@ import { addresses } from "../../../contracts/shared/app/addresses";
 import { config } from "../../../contracts/shared/app/config";
 import { ccipBnMAbi } from "../../../contracts/shared/app/external-abi";
 import { isChainId } from "../../../contracts/shared/app/types";
-import { chainlinkCCIPBnMAddresses } from "../../../contracts/shared/external-contract";
+import {
+  chainlinkCCIPBnMAddresses,
+  sepoliaWETHAddress,
+} from "../../../contracts/shared/external-contract";
 
 export const sepoliaClient = new ApolloClient({
   uri: "https://api.goldsky.com/api/public/project_clzdlcfurx39f01wickedh49y/subgraphs/ethdrive-sepolia/0.0.1/gn",
@@ -216,6 +219,21 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
           chainId: _chainId,
           address: "",
           amount: balance.toString(),
+        });
+      }
+      if (chainId === "11155111") {
+        console.log("get weth");
+        const wethBalance = await chainPublicClients[chainId].readContract({
+          abi: ccipBnMAbi, // reuse this abi
+          address: sepoliaWETHAddress,
+          functionName: "balanceOf",
+          args: [tokenBoundAccount],
+        });
+        files.push({
+          type: "weth",
+          chainId: _chainId,
+          address: sepoliaWETHAddress,
+          amount: wethBalance.toString(),
         });
       }
       if (

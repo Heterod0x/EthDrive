@@ -381,11 +381,14 @@ export function EthDrive({ path }: { path?: string }) {
   const sessionEstablished = useRef(false);
 
   useEffect(() => {
+    if (
+      !selectedDirectoryChainId ||
+      !selectedDirectory.tokenBoundAccount ||
+      topic
+    ) {
+      return;
+    }
     (async () => {
-      if (walletInitialized.current) {
-        return;
-      }
-      walletInitialized.current = true;
       console.log("walletConnect: init");
       const core = new Core({
         projectId:
@@ -402,81 +405,70 @@ export function EthDrive({ path }: { path?: string }) {
         },
       });
       setWeb3Wallet(web3wallet);
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (
-      !selectedDirectoryChainId ||
-      !selectedDirectory.tokenBoundAccount ||
-      !web3wallet ||
-      topic
-    ) {
-      return;
-    }
-    console.log("walletConnect: setOnSessionProposal");
-    web3wallet.on(
-      "session_proposal",
-      async ({ id, params }: Web3WalletTypes.SessionProposal) => {
-        console.log("walletConnect: onSessionProposal", params);
-        if (selectedDirectoryChainId !== 11155111) {
-          throw new Error("Wallet Connect only supports sepolia chain");
-        }
-        try {
-          const approvedNamespaces = buildApprovedNamespaces({
-            proposal: params,
-            supportedNamespaces: {
-              eip155: {
-                chains: [`eip155:${selectedDirectoryChainId}`],
-                methods: ["eth_sendTransaction", "personal_sign"],
-                events: ["accountsChanged", "chainChanged"],
-                accounts: [
-                  `eip155:${selectedDirectoryChainId}:${selectedDirectory.tokenBoundAccount}`,
-                ],
+      console.log("walletConnect: setOnSessionProposal");
+      web3wallet.on(
+        "session_proposal",
+        async ({ id, params }: Web3WalletTypes.SessionProposal) => {
+          console.log("walletConnect: onSessionProposal", params);
+          if (selectedDirectoryChainId !== 11155111) {
+            throw new Error("Wallet Connect only supports sepolia chain");
+          }
+          try {
+            const approvedNamespaces = buildApprovedNamespaces({
+              proposal: params,
+              supportedNamespaces: {
+                eip155: {
+                  chains: [`eip155:${selectedDirectoryChainId}`],
+                  methods: ["eth_sendTransaction", "personal_sign"],
+                  events: ["accountsChanged", "chainChanged"],
+                  accounts: [
+                    `eip155:${selectedDirectoryChainId}:${selectedDirectory.tokenBoundAccount}`,
+                  ],
+                },
               },
-            },
+            });
+            const { topic } = await web3wallet.approveSession({
+              id,
+              namespaces: approvedNamespaces,
+            });
+            console.log("walletConnect: session approved", topic);
+            setTopic(topic);
+            sessionEstablished.current = true; // Mark session as established
+          } catch (error) {
+            console.log("walletConnect: error", error);
+            await web3wallet.rejectSession({
+              id: id,
+              reason: getSdkError("USER_REJECTED"),
+            });
+          }
+        },
+      );
+      console.log("walletConnect: setEthSendTransaction");
+      web3wallet;
+      web3wallet.on(
+        "session_request",
+        async (event: Web3WalletTypes.SessionRequest) => {
+          const { topic, params, id } = event;
+          console.log(topic, params, id);
+          if (params.request.method != "eth_sendTransaction") {
+            throw new Error("Unsupported method");
+          }
+          const [{ to, value, data }] = params.request.params;
+          console.log("to", to);
+          console.log("value", value);
+          console.log("data", data);
+          const callData = encodeFunctionData({
+            abi: ethDriveAccountAbi,
+            functionName: "execute",
+            args: [to, value ? fromHex(value, "bigint") : BigInt(0), data],
           });
-          const { topic } = await web3wallet.approveSession({
-            id,
-            namespaces: approvedNamespaces,
-          });
-          console.log("walletConnect: session approved", topic);
-          setTopic(topic);
-          sessionEstablished.current = true; // Mark session as established
-        } catch (error) {
-          console.log("walletConnect: error", error);
-          await web3wallet.rejectSession({
-            id: id,
-            reason: getSdkError("USER_REJECTED"),
-          });
-        }
-      },
-    );
-    console.log("walletConnect: setEthSendTransaction");
-    web3wallet.on(
-      "session_request",
-      async (event: Web3WalletTypes.SessionRequest) => {
-        const { topic, params, id } = event;
-        console.log(topic, params, id);
-        if (params.request.method != "eth_sendTransaction") {
-          throw new Error("Unsupported method");
-        }
-        const [{ to, value, data }] = params.request.params;
-        console.log("to", to);
-        console.log("value", value);
-        console.log("data", data);
-        const callData = encodeFunctionData({
-          abi: ethDriveAccountAbi,
-          functionName: "execute",
-          args: [to, fromHex(value, "bigint"), data],
-        });
-        console.log("callData", callData);
-        const hash = await handleTransactionAsDirectory(callData);
-        const response = { id, result: hash, jsonrpc: "2.0" };
-        await web3wallet.respondSessionRequest({ topic, response });
-      },
-    );
-
+          console.log("callData", callData);
+          const hash = await handleTransactionAsDirectory(callData);
+          const response = { id, result: hash, jsonrpc: "2.0" };
+          await web3wallet.respondSessionRequest({ topic, response });
+        },
+      );
+    })();
     return () => {
       if (sessionEstablished.current && web3wallet && topic) {
         console.log("walletConnect: disconnect");
@@ -495,12 +487,7 @@ export function EthDrive({ path }: { path?: string }) {
         sessionEstablished.current = false;
       }
     };
-  }, [
-    selectedDirectoryChainId,
-    selectedDirectory.tokenBoundAccount,
-    web3wallet,
-    topic,
-  ]);
+  }, [selectedDirectoryChainId, selectedDirectory.tokenBoundAccount, topic]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -604,6 +591,9 @@ export function EthDrive({ path }: { path?: string }) {
                         <File className="h-4 w-4 mr-2" />
                         {file.type == "native" && (
                           <span>{formatEther(BigInt(file.amount))} ETH</span>
+                        )}
+                        {file.type == "weth" && (
+                          <span>{formatEther(BigInt(file.amount))} WETH</span>
                         )}
                         {file.type == "ccip" && (
                           <span>{formatEther(BigInt(file.amount))} BnM</span>
