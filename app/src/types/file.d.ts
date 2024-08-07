@@ -1,4 +1,4 @@
-export type FileType = "native" | "ccip";
+export type FileType = "native" | "weth" | "ccip";
 
 export type File = {
   type: FileType;

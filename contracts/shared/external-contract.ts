@@ -16,3 +16,5 @@ export const chainlinkCCIPBnMAddresses = {
   "84532": "0x88A2d74F47a237a62e7A51cdDa67270CE381555e",
   "11155420": "0x8aF4204e30565DF93352fE8E1De78925F6664dA7",
 };
+
+export const sepoliaWETHAddress = "0xfff9976782d46cc05630d1f6ebab18b2324d6b14";
