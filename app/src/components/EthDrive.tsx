@@ -1,16 +1,12 @@
 "use client";
 
-import { Core } from "@walletconnect/core";
-import { buildApprovedNamespaces, getSdkError } from "@walletconnect/utils";
-import { Web3Wallet, Web3WalletTypes } from "@walletconnect/web3wallet";
 import { File, Folder } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Address,
   Hex,
   encodeFunctionData,
   formatEther,
-  fromHex,
   toHex,
   zeroAddress,
 } from "viem";
@@ -29,23 +25,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { useChain } from "@/hooks/useChain";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useDragAndDrop } from "@/hooks/useDragAndDrop";
+import { useWalletConnect } from "@/hooks/useWalletConnect";
 import { dummySignature, request } from "@/lib/alchemy";
-import { getChainIdFromPath } from "@/lib/chain";
-import { findDirectory } from "@/lib/directory";
-import { File as FileType } from "@/types/file";
 
 import {
   ethDriveAbi,
   ethDriveAccountAbi,
 } from "../../../contracts/shared/app/abi";
-import { addresses } from "../../../contracts/shared/app/addresses";
-import { config } from "../../../contracts/shared/app/config";
 import {
   ccipBnMAbi,
   entryPointAbi,
 } from "../../../contracts/shared/app/external-abi";
-import { ethDriveCCIPTokenTransferorAbi } from "../../../contracts/shared/app/optional-abi";
-import { isChainId } from "../../../contracts/shared/app/types";
 import { chainlinkCCIPBnMAddresses } from "../../../contracts/shared/external-contract";
 import { entryPointAddress } from "../../../contracts/shared/external-contract";
 import { CopyToClipboard } from "./CopyToClipboard";
@@ -70,11 +61,8 @@ export function EthDrive({ path }: { path?: string }) {
     setSelectedDirectoryPath,
   } = useDirectory(path, connectedAddress);
 
-  const {
-    chainAddresses: connectedChainAddresses,
-    // chainConfig: connectedChainConfig,
-    // chainPublicClient: connectedChainPublicClient,
-  } = useChain(connectedChainId);
+  const { chainAddresses: connectedChainAddresses } =
+    useChain(connectedChainId);
   const {
     chainAddresses: selectedChainAddresses,
     chainConfig: selectedChainConfig,
@@ -87,6 +75,7 @@ export function EthDrive({ path }: { path?: string }) {
 
   const handleTransactionAsDirectory = useCallback(
     async (callData: Hex) => {
+      console.log("handleTransactionAsDirectory");
       console.log("callData", callData);
       const account = selectedDirectory.tokenBoundAccount as Address;
       console.log("account", account);
@@ -218,18 +207,36 @@ export function EthDrive({ path }: { path?: string }) {
     ],
   );
 
+  const handleTransaction = useCallback(
+    async (to: Address, callData: Hex) => {
+      console.log("handleTransaction");
+      console.log("to", to);
+      console.log("callData", callData);
+      const txHash = await walletClient!.sendTransaction({
+        to,
+        data: callData,
+      });
+      console.log("txHash", txHash);
+    },
+    [walletClient],
+  );
+
+  const { handleDragStart, handleDragOver, handleFileDrop } = useDragAndDrop(
+    rootDirectory,
+    handleTransactionAsDirectory,
+  );
+  const { web3wallet, uri, setUri } = useWalletConnect(
+    selectedDirectory,
+    handleTransactionAsDirectory,
+  );
+
   async function handleCreateDirectoryTransaction() {
     const callData = encodeFunctionData({
       abi: ethDriveAbi,
       functionName: "createDirectory",
       args: [createDirectoryName],
     });
-    console.log("callData", callData);
-    const txHash = await walletClient!.sendTransaction({
-      to: connectedChainAddresses!.ethDrive,
-      data: callData,
-    });
-    console.log("txHash", txHash);
+    handleTransaction(connectedChainAddresses!.ethDrive, callData as Hex);
   }
 
   async function handleMintMnB() {
@@ -239,255 +246,11 @@ export function EthDrive({ path }: { path?: string }) {
       functionName: "drip",
       args: [selectedDirectory.tokenBoundAccount as Address],
     });
-    console.log("callData", callData);
     const chainId =
       selectedDirectoryChainId?.toString() as keyof typeof chainlinkCCIPBnMAddresses;
-    const txHash = await walletClient!.sendTransaction({
-      to: chainlinkCCIPBnMAddresses[chainId] as Address,
-      data: callData,
-    });
-    console.log("txHash", txHash);
+    const to = chainlinkCCIPBnMAddresses[chainId];
+    handleTransaction(to as Address, callData as Hex);
   }
-
-  const [draggedFile, setDraggedFile] = useState<FileType | null>(null);
-
-  const handleDragStart =
-    (file: FileType) => (event: React.DragEvent<HTMLDivElement>) => {
-      setDraggedFile(file);
-      event.dataTransfer.setData("text/plain", JSON.stringify(file));
-    };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
-
-  const handleFileDrop = useCallback(
-    (directoryPath: string) => {
-      if (draggedFile) {
-        console.log("draggedFile", draggedFile);
-        const sourceChainId = draggedFile.chainId?.toString();
-        console.log("sourceChainId", sourceChainId);
-        const destinationChainId =
-          getChainIdFromPath(directoryPath)?.toString();
-        console.log("destinationChainId", destinationChainId);
-        if (!isChainId(sourceChainId) || !isChainId(destinationChainId)) {
-          throw new Error("Invalid chain ID");
-        }
-        const destinationDirectory = findDirectory(
-          rootDirectory,
-          directoryPath.split("/").slice(1),
-        );
-        console.log("destinationDirectory", destinationDirectory);
-        if (!destinationDirectory) {
-          throw new Error("Destination directory not found");
-        }
-        if (!destinationDirectory.tokenBoundAccount) {
-          throw new Error(
-            "Destination directory does not have a token bound account",
-          );
-        }
-        let callData = "";
-        if (draggedFile.type == "native") {
-          console.log("create execute call data for ETH transfer...");
-          callData = encodeFunctionData({
-            abi: ethDriveAccountAbi,
-            functionName: "execute",
-            args: [
-              destinationDirectory.tokenBoundAccount as Address,
-              BigInt(draggedFile.amount),
-              "0x",
-            ],
-          });
-        } else if (draggedFile.type == "ccip") {
-          console.log("create execute call data for CCIP transfer...");
-          if (sourceChainId == destinationChainId) {
-            console.log("same chain transfer");
-            const transferCallData = encodeFunctionData({
-              abi: ccipBnMAbi,
-              functionName: "transfer",
-              args: [
-                destinationDirectory.tokenBoundAccount as Address,
-                BigInt(draggedFile.amount),
-              ],
-            });
-            console.log("transferCallData", transferCallData);
-            callData = encodeFunctionData({
-              abi: ethDriveAccountAbi,
-              functionName: "execute",
-              args: [
-                chainlinkCCIPBnMAddresses[
-                  sourceChainId as keyof typeof chainlinkCCIPBnMAddresses
-                ] as Address,
-                BigInt(0),
-                transferCallData,
-              ],
-            });
-          } else {
-            console.log("cross chain transfer");
-            const approveCallData = encodeFunctionData({
-              abi: ccipBnMAbi,
-              functionName: "approve",
-              args: [
-                addresses[sourceChainId].ethDriveCCIPTokenTransferor as Address,
-                BigInt(draggedFile.amount),
-              ],
-            });
-            console.log("approveCallData", approveCallData);
-            const transferTokensPayNativeCallData = encodeFunctionData({
-              abi: ethDriveCCIPTokenTransferorAbi,
-              functionName: "transferTokensPayNative",
-              args: [
-                config[destinationChainId].chainlinkCCIPChainSelecter,
-                destinationDirectory.tokenBoundAccount as Address,
-                chainlinkCCIPBnMAddresses[
-                  sourceChainId as keyof typeof chainlinkCCIPBnMAddresses
-                ] as Address,
-                BigInt(draggedFile.amount),
-              ],
-            });
-            console.log(
-              "transferTokensPayNativeCallData",
-              transferTokensPayNativeCallData,
-            );
-            callData = encodeFunctionData({
-              abi: ethDriveAccountAbi,
-              functionName: "executeBatch",
-              args: [
-                [
-                  chainlinkCCIPBnMAddresses[
-                    sourceChainId as keyof typeof chainlinkCCIPBnMAddresses
-                  ] as Address,
-                  addresses[sourceChainId]
-                    .ethDriveCCIPTokenTransferor as Address,
-                ],
-                [BigInt(0), BigInt(0)],
-                [approveCallData, transferTokensPayNativeCallData],
-              ],
-            });
-          }
-        }
-        handleTransactionAsDirectory(callData as Hex);
-        setDraggedFile(null);
-      }
-    },
-    [draggedFile, rootDirectory],
-  );
-
-  const [web3wallet, setWeb3Wallet] = useState<any>();
-  const [uri, setUri] = useState("");
-  const [name, setName] = useState("");
-  const [topic, setTopic] = useState("");
-  const walletInitialized = useRef(false);
-  const sessionEstablished = useRef(false);
-
-  useEffect(() => {
-    if (
-      !selectedDirectoryChainId ||
-      !selectedDirectory.tokenBoundAccount ||
-      topic
-    ) {
-      return;
-    }
-    (async () => {
-      console.log("walletConnect: init");
-      const core = new Core({
-        projectId:
-          process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ||
-          "3a8170812b534d0ff9d794f19a901d64",
-      });
-      const web3wallet = await Web3Wallet.init({
-        core,
-        metadata: {
-          name: "EthDrive",
-          description: "EthDrive Directory Account",
-          url: "super-eth-drive.vercel.app",
-          icons: ["https://super-eth-drive.vercel.app/logo.png"],
-        },
-      });
-      setWeb3Wallet(web3wallet);
-      console.log("walletConnect: setOnSessionProposal");
-      web3wallet.on(
-        "session_proposal",
-        async ({ id, params }: Web3WalletTypes.SessionProposal) => {
-          console.log("walletConnect: onSessionProposal", params);
-          if (selectedDirectoryChainId !== 11155111) {
-            throw new Error("Wallet Connect only supports sepolia chain");
-          }
-          try {
-            const approvedNamespaces = buildApprovedNamespaces({
-              proposal: params,
-              supportedNamespaces: {
-                eip155: {
-                  chains: [`eip155:${selectedDirectoryChainId}`],
-                  methods: ["eth_sendTransaction", "personal_sign"],
-                  events: ["accountsChanged", "chainChanged"],
-                  accounts: [
-                    `eip155:${selectedDirectoryChainId}:${selectedDirectory.tokenBoundAccount}`,
-                  ],
-                },
-              },
-            });
-            const { topic } = await web3wallet.approveSession({
-              id,
-              namespaces: approvedNamespaces,
-            });
-            console.log("walletConnect: session approved", topic);
-            setTopic(topic);
-            sessionEstablished.current = true; // Mark session as established
-          } catch (error) {
-            console.log("walletConnect: error", error);
-            await web3wallet.rejectSession({
-              id: id,
-              reason: getSdkError("USER_REJECTED"),
-            });
-          }
-        },
-      );
-      console.log("walletConnect: setEthSendTransaction");
-      web3wallet;
-      web3wallet.on(
-        "session_request",
-        async (event: Web3WalletTypes.SessionRequest) => {
-          const { topic, params, id } = event;
-          console.log(topic, params, id);
-          if (params.request.method != "eth_sendTransaction") {
-            throw new Error("Unsupported method");
-          }
-          const [{ to, value, data }] = params.request.params;
-          console.log("to", to);
-          console.log("value", value);
-          console.log("data", data);
-          const callData = encodeFunctionData({
-            abi: ethDriveAccountAbi,
-            functionName: "execute",
-            args: [to, value ? fromHex(value, "bigint") : BigInt(0), data],
-          });
-          console.log("callData", callData);
-          const hash = await handleTransactionAsDirectory(callData);
-          const response = { id, result: hash, jsonrpc: "2.0" };
-          await web3wallet.respondSessionRequest({ topic, response });
-        },
-      );
-    })();
-    return () => {
-      if (sessionEstablished.current && web3wallet && topic) {
-        console.log("walletConnect: disconnect");
-        try {
-          web3wallet.disconnectSession({
-            topic,
-            reason: getSdkError("USER_DISCONNECTED"),
-          });
-        } catch (error) {
-          console.log("walletConnect: error", error);
-        }
-        setWeb3Wallet(undefined);
-        setUri("");
-        setTopic("");
-        setName("");
-        sessionEstablished.current = false;
-      }
-    };
-  }, [selectedDirectoryChainId, selectedDirectory.tokenBoundAccount, topic]);
 
   return (
     <div className="flex flex-col h-screen">
