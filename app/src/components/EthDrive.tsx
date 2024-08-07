@@ -207,11 +207,7 @@ export function EthDrive({ path }: { path?: string }) {
         return userOperationReceipt.transactionHash;
       } else {
         console.log("account abstraction is not enabled");
-        const txHash = await walletClient.sendTransaction({
-          to: account,
-          data: callData,
-        });
-        console.log("txHash", txHash);
+        await handleTransaction(account, BigInt(0), callData as Hex);
       }
     },
     [
@@ -228,17 +224,30 @@ export function EthDrive({ path }: { path?: string }) {
       if (!walletClient) {
         throw new Error("Wallet client not found");
       }
-      console.log("handleTransaction");
-      console.log("to", to);
-      console.log("callData", callData);
-      const txHash = await walletClient.sendTransaction({
-        to,
-        value,
-        data: callData,
-      });
-      console.log("txHash", txHash);
+      if (!connectedChainId) {
+        throw new Error("Connected chain id not found");
+      }
+      if (!selectedDirectoryChainId) {
+        throw new Error("Selected directory chain id not found");
+      }
+      console.log("connectedChainId", connectedChainId);
+      console.log("selectedDirectoryChainId", selectedDirectoryChainId);
+      if (connectedChainId !== selectedDirectoryChainId) {
+        console.log("switching chain...");
+        await walletClient.switchChain({ id: selectedDirectoryChainId });
+      } else {
+        console.log("handleTransaction");
+        console.log("to", to);
+        console.log("callData", callData);
+        const txHash = await walletClient.sendTransaction({
+          to,
+          value,
+          data: callData,
+        });
+        console.log("txHash", txHash);
+      }
     },
-    [walletClient],
+    [walletClient, connectedChainId, selectedDirectoryChainId],
   );
 
   const { handleDragStart, handleDragOver, handleFileDrop } = useDragAndDrop(
@@ -251,13 +260,16 @@ export function EthDrive({ path }: { path?: string }) {
   );
 
   async function handleCreateDirectoryTransaction() {
+    if (!connectedChainAddresses) {
+      throw new Error("Connected chain addresses not found");
+    }
     const callData = encodeFunctionData({
       abi: ethDriveAbi,
       functionName: "createDirectory",
       args: [createDirectoryName],
     });
     handleTransaction(
-      connectedChainAddresses!.ethDrive,
+      connectedChainAddresses.ethDrive,
       BigInt(0),
       callData as Hex,
     );
