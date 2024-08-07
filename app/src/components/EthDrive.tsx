@@ -10,6 +10,7 @@ import {
   Hex,
   encodeFunctionData,
   formatEther,
+  fromHex,
   toHex,
   zeroAddress,
 } from "viem";
@@ -84,7 +85,7 @@ export function EthDrive({ path }: { path?: string }) {
     useState(false);
   const [createDirectoryName, setCreateDirectoryName] = useState("");
 
-  const handleDirectoryTransaction = useCallback(
+  const handleTransactionAsDirectory = useCallback(
     async (callData: Hex) => {
       console.log("callData", callData);
       const account = selectedDirectory.tokenBoundAccount as Address;
@@ -174,6 +175,31 @@ export function EthDrive({ path }: { path?: string }) {
         if (sendUserOperationRes.error) {
           throw new Error(sendUserOperationRes.error);
         }
+        const requestId = sendUserOperationRes.result;
+        console.log("requestId", requestId);
+        const pollReceipt = async (requestId: string): Promise<any> => {
+          return new Promise((resolve, reject) => {
+            const interval = setInterval(async () => {
+              console.log("pollReceipt... ", requestId);
+              const userOperationReceipt = await request(
+                selectedChainConfig!.alchemyChainName,
+                "eth_getUserOperationReceipt",
+                [requestId],
+              );
+              if (userOperationReceipt.error) {
+                clearInterval(interval);
+                reject(userOperationReceipt.error);
+              }
+              if (userOperationReceipt.result) {
+                clearInterval(interval);
+                resolve(userOperationReceipt.result.receipt);
+              }
+            }, 2000); // Poll every 2 seconds
+          });
+        };
+        const userOperationReceipt = await pollReceipt(requestId);
+        console.log("userOperationReceipt", userOperationReceipt);
+        return userOperationReceipt.transactionHash;
       } else {
         console.log("account abstraction is not enabled");
         const txHash = await walletClient!.sendTransaction({
@@ -192,7 +218,7 @@ export function EthDrive({ path }: { path?: string }) {
     ],
   );
 
-  async function handleUserTransaction() {
+  async function handleCreateDirectoryTransaction() {
     const callData = encodeFunctionData({
       abi: ethDriveAbi,
       functionName: "createDirectory",
@@ -340,7 +366,7 @@ export function EthDrive({ path }: { path?: string }) {
             });
           }
         }
-        handleDirectoryTransaction(callData as Hex);
+        handleTransactionAsDirectory(callData as Hex);
         setDraggedFile(null);
       }
     },
@@ -351,10 +377,15 @@ export function EthDrive({ path }: { path?: string }) {
   const [uri, setUri] = useState("");
   const [name, setName] = useState("");
   const [topic, setTopic] = useState("");
+  const walletInitialized = useRef(false);
   const sessionEstablished = useRef(false);
 
   useEffect(() => {
     (async () => {
+      if (walletInitialized.current) {
+        return;
+      }
+      walletInitialized.current = true;
       console.log("walletConnect: init");
       const core = new Core({
         projectId:
@@ -378,15 +409,15 @@ export function EthDrive({ path }: { path?: string }) {
     if (
       !selectedDirectoryChainId ||
       !selectedDirectory.tokenBoundAccount ||
-      !web3wallet
+      !web3wallet ||
+      topic
     ) {
       return;
     }
-    (async () => {
-      async function onSessionProposal({
-        id,
-        params,
-      }: Web3WalletTypes.SessionProposal) {
+    console.log("walletConnect: setOnSessionProposal");
+    web3wallet.on(
+      "session_proposal",
+      async ({ id, params }: Web3WalletTypes.SessionProposal) => {
         console.log("walletConnect: onSessionProposal", params);
         if (selectedDirectoryChainId !== 11155111) {
           throw new Error("Wallet Connect only supports sepolia chain");
@@ -419,10 +450,32 @@ export function EthDrive({ path }: { path?: string }) {
             reason: getSdkError("USER_REJECTED"),
           });
         }
-      }
-      console.log("walletConnect: setOnSessionProposal");
-      web3wallet.on("session_proposal", onSessionProposal);
-    })();
+      },
+    );
+    console.log("walletConnect: setEthSendTransaction");
+    web3wallet.on(
+      "session_request",
+      async (event: Web3WalletTypes.SessionRequest) => {
+        const { topic, params, id } = event;
+        console.log(topic, params, id);
+        if (params.request.method != "eth_sendTransaction") {
+          throw new Error("Unsupported method");
+        }
+        const [{ to, value, data }] = params.request.params;
+        console.log("to", to);
+        console.log("value", value);
+        console.log("data", data);
+        const callData = encodeFunctionData({
+          abi: ethDriveAccountAbi,
+          functionName: "execute",
+          args: [to, fromHex(value, "bigint"), data],
+        });
+        console.log("callData", callData);
+        const hash = await handleTransactionAsDirectory(callData);
+        const response = { id, result: hash, jsonrpc: "2.0" };
+        await web3wallet.respondSessionRequest({ topic, response });
+      },
+    );
 
     return () => {
       if (sessionEstablished.current && web3wallet && topic) {
@@ -500,7 +553,7 @@ export function EthDrive({ path }: { path?: string }) {
                   functionName: "execute",
                   args: [zeroAddress, BigInt(0), "0x"],
                 });
-                handleDirectoryTransaction(callData);
+                handleTransactionAsDirectory(callData);
               }}
             >
               Test Transaction
@@ -612,7 +665,7 @@ export function EthDrive({ path }: { path?: string }) {
             >
               Cancel
             </Button>
-            <Button onClick={handleUserTransaction}>Create</Button>
+            <Button onClick={handleCreateDirectoryTransaction}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
