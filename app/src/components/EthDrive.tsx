@@ -409,7 +409,7 @@ export function EthDrive({ path }: { path?: string }) {
                 onCheckedChange={setIsOlnyShowConnectedDirectory}
               />
               <Label htmlFor="airplane-mode">
-                Only show connected address's directory
+                Only show connected address&apos;s directory
               </Label>
             </div>
           )}
