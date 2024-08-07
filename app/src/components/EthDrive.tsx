@@ -211,7 +211,7 @@ export function EthDrive({ path }: { path?: string }) {
       }
     },
     [
-      selectedDirectory.tokenBoundAccount,
+      selectedDirectory,
       selectedChainConfig,
       selectedChainPublicClient,
       selectedChainAddresses,
@@ -296,9 +296,8 @@ export function EthDrive({ path }: { path?: string }) {
             </div>
           )}
         </Sidebar>
-
         <div className="p-4 w-full">
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-4">
             <div className="flex items-center">
               <DirectoryPathBreadcrumb
                 selectedDirectoryPath={selectedDirectoryPath}
@@ -310,42 +309,31 @@ export function EthDrive({ path }: { path?: string }) {
                 }/${selectedDirectoryPath}`}
               />
             </div>
-            <Button
-              disabled={selectedDirectory.depth < 2}
-              onClick={() => {
-                const callData = encodeFunctionData({
-                  abi: ethDriveAccountAbi,
-                  functionName: "execute",
-                  args: [zeroAddress, BigInt(0), "0x"],
-                });
-                handleTransactionAsDirectory(callData);
-              }}
-            >
-              Test Transaction
-            </Button>
           </div>
-          <div className="mb-4 space-y-2">
-            {selectedDirectory.tokenBoundAccount && (
-              <div className="flex items-center">
-                <p className="text-sm">
-                  Token Bound Account: {selectedDirectory.tokenBoundAccount}
-                </p>
-                <CopyToClipboard text={selectedDirectory.tokenBoundAccount} />
+          {selectedDirectoryPath == selectedDirectory.path && (
+            <div>
+              <div className="mb-4 space-y-2">
+                {selectedDirectory.tokenBoundAccount && (
+                  <div className="flex items-center">
+                    <p className="text-sm">
+                      Token Bound Account: {selectedDirectory.tokenBoundAccount}
+                    </p>
+                    <CopyToClipboard
+                      text={selectedDirectory.tokenBoundAccount}
+                    />
+                  </div>
+                )}
+                {selectedDirectory.holder && (
+                  <div className="flex items-center">
+                    <p className="text-sm">
+                      Token Holder: {selectedDirectory.holder}
+                    </p>
+                    <CopyToClipboard text={selectedDirectory.holder} />
+                  </div>
+                )}
               </div>
-            )}
-            {selectedDirectory.holder && (
-              <div className="flex items-center">
-                <p className="text-sm">
-                  Token Holder: {selectedDirectory.holder}
-                </p>
-                <CopyToClipboard text={selectedDirectory.holder} />
-              </div>
-            )}
-          </div>
-          <div>
-            <div className="mb-4">
-              {selectedDirectoryPath == selectedDirectory.path &&
-                selectedDirectory.subdirectories.map((directory) => (
+              <div className="mb-4">
+                {selectedDirectory.subdirectories.map((directory) => (
                   <Card
                     key={directory.path}
                     className="flex items-center p-2 cursor-pointer w-full mb-2"
@@ -357,8 +345,7 @@ export function EthDrive({ path }: { path?: string }) {
                     <span>{directory.name}</span>
                   </Card>
                 ))}
-              {selectedDirectoryPath == selectedDirectory.path &&
-                selectedDirectory.files.map((file, i) => (
+                {selectedDirectory.files.map((file, i) => (
                   <React.Fragment key={`files_${i}`}>
                     <Card
                       className="flex items-center p-2 cursor-pointer w-full mb-2"
@@ -378,39 +365,41 @@ export function EthDrive({ path }: { path?: string }) {
                     </Card>
                   </React.Fragment>
                 ))}
-            </div>
-            {selectedDirectory.depth >= 2 && (
-              <div>
-                {selectedChainConfig?.isCCIPEnabled && (
-                  <Button
-                    onClick={() => {
-                      handleMintMnB();
-                    }}
-                  >
-                    Add 1 CCIP BnM Token
-                  </Button>
-                )}
-                <div>
-                  <Input
-                    type="text"
-                    placeholder="wc:"
-                    className="mb-2"
-                    onChange={(e) => setUri(e.target.value)}
-                  />
-                  <Button
-                    onClick={() => {
-                      web3wallet.pair({ uri });
-                    }}
-                  >
-                    Pair
-                  </Button>
-                </div>
               </div>
-            )}
-          </div>
+              <div>
+                {selectedDirectory.depth >= 2 && (
+                  <div className="space-y-4">
+                    {selectedChainConfig?.isCCIPEnabled && (
+                      <Button
+                        onClick={() => {
+                          handleMintMnB();
+                        }}
+                      >
+                        Add 1 CCIP BnM Token
+                      </Button>
+                    )}
+                    <div>
+                      <Input
+                        type="text"
+                        placeholder="wc:"
+                        className="mb-2"
+                        onChange={(e) => setUri(e.target.value)}
+                      />
+                      <Button
+                        onClick={() => {
+                          web3wallet.pair({ uri });
+                        }}
+                      >
+                        Pair
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
       <Dialog
         open={isCreateDirectoryModalOpen}
         onOpenChange={setIsCreateDirectoryModalOpen}
