@@ -311,7 +311,9 @@ export function EthDrive({ path }: { path?: string }) {
                 }/${selectedDirectoryPath}`}
               />
             </div>
-            <div className="flex items-center space-x-2">
+          </div>
+          {isConnected && (
+            <div className="flex items-center space-x-2 mb-4">
               <Switch
                 id="airplane-mode"
                 checked={isOlnyShowConnectedDirectory}
@@ -321,7 +323,7 @@ export function EthDrive({ path }: { path?: string }) {
                 Only show connected address's directory
               </Label>
             </div>
-          </div>
+          )}
           {selectedDirectoryPath == selectedDirectory.path && (
             <div>
               <div className="mb-4 space-y-2">
