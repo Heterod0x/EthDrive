@@ -1,7 +1,7 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { Plus } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAccount } from "wagmi";
@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button";
 
 export function Header({
   openCreateDirectoryDialog,
+  openSettingsDialog,
 }: {
   openCreateDirectoryDialog: () => void;
+  openSettingsDialog: () => void;
 }) {
   const { isConnected } = useAccount();
 
@@ -23,7 +25,7 @@ export function Header({
           <h1 className="hidden lg:block text-2xl font-semibold">EthDrive</h1>
         </div>
       </Link>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2">
         {isConnected && (
           <Button onClick={openCreateDirectoryDialog}>
             <Plus className="mr-2 h-4 w-4" /> New
@@ -34,6 +36,11 @@ export function Header({
           chainStatus="name"
           showBalance={false}
         />
+        {isConnected && (
+          <div className="cursor-pointer">
+            <Settings className="h-6 w-6" onClick={openSettingsDialog} />
+          </div>
+        )}
       </div>
     </header>
   );
