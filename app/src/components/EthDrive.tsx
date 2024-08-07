@@ -2,14 +2,7 @@
 
 import { File, Folder } from "lucide-react";
 import React, { useCallback, useState } from "react";
-import {
-  Address,
-  Hex,
-  encodeFunctionData,
-  formatEther,
-  toHex,
-  zeroAddress,
-} from "viem";
+import { Address, Hex, encodeFunctionData, formatEther, toHex } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 
 import { ExpandableDirectory } from "@/components/ExpandableDirectory";
@@ -23,6 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useChain } from "@/hooks/useChain";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useDragAndDrop } from "@/hooks/useDragAndDrop";
@@ -69,6 +64,8 @@ export function EthDrive({ path }: { path?: string }) {
     chainAddresses: selectedChainAddresses,
   } = useChain(selectedDirectoryChainId);
 
+  const [isOlnyShowConnectedDirectory, setIsOlnyShowConnectedDirectory] =
+    useState(false);
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
     useState(false);
   const [createDirectoryName, setCreateDirectoryName] = useState("");
@@ -274,14 +271,16 @@ export function EthDrive({ path }: { path?: string }) {
           setIsCreateDirectoryModalOpen(true);
         }}
       />
-
       <div className="flex flex-grow">
         <Sidebar>
           <div>
             <p className="font-medium mb-2">All Directories</p>
             <ExpandableDirectory
               directory={rootDirectory}
-              onSelected={setSelectedDirectoryPath}
+              onSelected={(path) => {
+                setIsOlnyShowConnectedDirectory(false);
+                setSelectedDirectoryPath(path);
+              }}
               onFileDrop={handleFileDrop}
             />
           </div>
@@ -290,7 +289,10 @@ export function EthDrive({ path }: { path?: string }) {
               <p className="font-medium mb-2">My Directories</p>
               <ExpandableDirectory
                 directory={connectedAddressDirectory}
-                onSelected={setSelectedDirectoryPath}
+                onSelected={(path) => {
+                  setIsOlnyShowConnectedDirectory(true);
+                  setSelectedDirectoryPath(path);
+                }}
                 onFileDrop={handleFileDrop}
               />
             </div>
@@ -308,6 +310,16 @@ export function EthDrive({ path }: { path?: string }) {
                   typeof window !== "undefined" && window.location.origin
                 }/${selectedDirectoryPath}`}
               />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="airplane-mode"
+                checked={isOlnyShowConnectedDirectory}
+                onCheckedChange={setIsOlnyShowConnectedDirectory}
+              />
+              <Label htmlFor="airplane-mode">
+                Only show connected address's directory
+              </Label>
             </div>
           </div>
           {selectedDirectoryPath == selectedDirectory.path && (
@@ -333,11 +345,22 @@ export function EthDrive({ path }: { path?: string }) {
                 )}
               </div>
               <div className="mb-4">
-                {selectedDirectory.subdirectories.map((directory) => (
+                {(selectedDirectory.depth >= 1 &&
+                isOlnyShowConnectedDirectory &&
+                connectedAddress
+                  ? selectedDirectory.subdirectories.filter(
+                      (subDir) =>
+                        subDir.holder?.toLowerCase() ===
+                        connectedAddress.toLowerCase(),
+                    )
+                  : selectedDirectory.subdirectories
+                ).map((directory) => (
                   <Card
                     key={directory.path}
                     className="flex items-center p-2 cursor-pointer w-full mb-2"
-                    onClick={() => setSelectedDirectoryPath(directory.path)}
+                    onClick={() => {
+                      setSelectedDirectoryPath(directory.path);
+                    }}
                     onDragOver={handleDragOver}
                     onDrop={() => handleFileDrop(directory.path)}
                   >
