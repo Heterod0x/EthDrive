@@ -2,7 +2,14 @@
 
 import { File, Folder } from "lucide-react";
 import React, { useCallback, useState } from "react";
-import { Address, Hex, encodeFunctionData, formatEther, toHex } from "viem";
+import {
+  Address,
+  Hex,
+  encodeFunctionData,
+  formatEther,
+  parseEther,
+  toHex,
+} from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 
 import { ExpandableDirectory } from "@/components/ExpandableDirectory";
@@ -217,7 +224,7 @@ export function EthDrive({ path }: { path?: string }) {
   );
 
   const handleTransaction = useCallback(
-    async (to: Address, callData: Hex) => {
+    async (to: Address, value = BigInt(0), callData: Hex) => {
       if (!walletClient) {
         throw new Error("Wallet client not found");
       }
@@ -226,6 +233,7 @@ export function EthDrive({ path }: { path?: string }) {
       console.log("callData", callData);
       const txHash = await walletClient.sendTransaction({
         to,
+        value,
         data: callData,
       });
       console.log("txHash", txHash);
@@ -248,7 +256,18 @@ export function EthDrive({ path }: { path?: string }) {
       functionName: "createDirectory",
       args: [createDirectoryName],
     });
-    handleTransaction(connectedChainAddresses!.ethDrive, callData as Hex);
+    handleTransaction(
+      connectedChainAddresses!.ethDrive,
+      BigInt(0),
+      callData as Hex,
+    );
+  }
+
+  async function handleDepositETH() {
+    console.log("depositing 0.001 ETH...");
+    const to = selectedDirectory.tokenBoundAccount;
+    const value = parseEther("0.001");
+    handleTransaction(to as Address, value, "0x");
   }
 
   async function handleMintMnB() {
@@ -261,7 +280,7 @@ export function EthDrive({ path }: { path?: string }) {
     const chainId =
       selectedDirectoryChainId?.toString() as keyof typeof chainlinkCCIPBnMAddresses;
     const to = chainlinkCCIPBnMAddresses[chainId];
-    handleTransaction(to as Address, callData as Hex);
+    handleTransaction(to as Address, BigInt(0), callData as Hex);
   }
 
   return (
@@ -392,34 +411,45 @@ export function EthDrive({ path }: { path?: string }) {
                 ))}
               </div>
               <div>
-                {selectedDirectory.depth >= 2 && (
-                  <div className="space-y-4">
-                    {selectedChainConfig?.isCCIPEnabled && (
-                      <Button
-                        onClick={() => {
-                          handleMintMnB();
-                        }}
-                      >
-                        Add 1 CCIP BnM Token
-                      </Button>
-                    )}
+                {selectedDirectory.depth >= 2 &&
+                  selectedDirectory.holder?.toLowerCase() ==
+                    connectedAddress?.toLowerCase() && (
                     <div>
-                      <Input
-                        type="text"
-                        placeholder="wc:"
-                        className="mb-2"
-                        onChange={(e) => setUri(e.target.value)}
-                      />
-                      <Button
-                        onClick={() => {
-                          web3wallet.pair({ uri });
-                        }}
-                      >
-                        Pair
-                      </Button>
+                      <div className="flex space-x-2 mb-4">
+                        <Button
+                          onClick={() => {
+                            handleDepositETH();
+                          }}
+                        >
+                          Add 0.001 ETH
+                        </Button>
+                        {selectedChainConfig?.isCCIPEnabled && (
+                          <Button
+                            onClick={() => {
+                              handleMintMnB();
+                            }}
+                          >
+                            Add 1 CCIP BnM
+                          </Button>
+                        )}
+                      </div>
+                      <div>
+                        <Input
+                          type="text"
+                          placeholder="wc:"
+                          className="mb-2"
+                          onChange={(e) => setUri(e.target.value)}
+                        />
+                        <Button
+                          onClick={() => {
+                            web3wallet.pair({ uri });
+                          }}
+                        >
+                          Pair
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           )}
