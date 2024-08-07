@@ -10,14 +10,6 @@ import { isChainId } from "../../../contracts/shared/app/types";
 export function useChain(chainId?: number) {
   const chainPublicClient = usePublicClient({ chainId });
 
-  const chainAddresses = useMemo(() => {
-    const _chainId = chainId?.toString();
-    if (!isChainId(_chainId)) {
-      return;
-    }
-    return addresses[_chainId];
-  }, [chainId]);
-
   const chainConfig = useMemo(() => {
     const _chainId = chainId?.toString();
     if (!isChainId(_chainId)) {
@@ -26,5 +18,13 @@ export function useChain(chainId?: number) {
     return config[_chainId];
   }, [chainId]);
 
-  return { chainAddresses, chainConfig, chainPublicClient };
+  const chainAddresses = useMemo(() => {
+    const _chainId = chainId?.toString();
+    if (!isChainId(_chainId)) {
+      return;
+    }
+    return addresses[_chainId];
+  }, [chainId]);
+
+  return { chainPublicClient, chainConfig, chainAddresses };
 }

@@ -64,9 +64,9 @@ export function EthDrive({ path }: { path?: string }) {
   const { chainAddresses: connectedChainAddresses } =
     useChain(connectedChainId);
   const {
-    chainAddresses: selectedChainAddresses,
-    chainConfig: selectedChainConfig,
     chainPublicClient: selectedChainPublicClient,
+    chainConfig: selectedChainConfig,
+    chainAddresses: selectedChainAddresses,
   } = useChain(selectedDirectoryChainId);
 
   const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
@@ -75,22 +75,34 @@ export function EthDrive({ path }: { path?: string }) {
 
   const handleTransactionAsDirectory = useCallback(
     async (callData: Hex) => {
+      if (!walletClient) {
+        throw new Error("Wallet client not found");
+      }
+      if (!selectedChainConfig) {
+        throw new Error("Chain config not found");
+      }
+      if (!selectedChainPublicClient) {
+        throw new Error("Chain public client not found");
+      }
+      if (!selectedChainAddresses) {
+        throw new Error("Chain addresses not found");
+      }
       console.log("handleTransactionAsDirectory");
       console.log("callData", callData);
       const account = selectedDirectory.tokenBoundAccount as Address;
       console.log("account", account);
-      if (selectedChainConfig?.isAccountAbstractionEnabled) {
+      if (selectedChainConfig.isAccountAbstractionEnabled) {
         console.log("account abstraction is enabled");
-        const nonce = await selectedChainPublicClient!.readContract({
+        const nonce = await selectedChainPublicClient.readContract({
           abi: ethDriveAccountAbi,
           address: account,
           functionName: "getNonce",
           args: [],
         });
         console.log("nonce", nonce);
-        const latestBlock = await selectedChainPublicClient!.getBlock();
+        const latestBlock = await selectedChainPublicClient.getBlock();
         console.log("latestBlock", latestBlock);
-        const baseFeePerGas = latestBlock!.baseFeePerGas || BigInt(0);
+        const baseFeePerGas = latestBlock.baseFeePerGas || BigInt(0);
         console.log("baseFeePerGas", baseFeePerGas);
         const adjustedBaseFeePerGas = baseFeePerGas + baseFeePerGas / BigInt(4); // add 25% overhead;
         console.log("adjustedBaseFeePerGas", adjustedBaseFeePerGas);
@@ -117,12 +129,12 @@ export function EthDrive({ path }: { path?: string }) {
           callData: callData,
           maxFeePerGas: toHex(maxFeePerGas),
           maxPriorityFeePerGas: toHex(adjustedMaxPriorityFeePerGas),
-          paymasterAndData: selectedChainAddresses!.ethDrivePaymaster,
+          paymasterAndData: selectedChainAddresses.ethDrivePaymaster,
           signature: dummySignature,
         };
         console.log("partialUserOperation", partialUserOperation);
         const estimateUserOperationGasRes = await request(
-          selectedChainConfig!.alchemyChainName,
+          selectedChainConfig.alchemyChainName,
           "eth_estimateUserOperationGas",
           [partialUserOperation, entryPointAddress],
         );
@@ -142,21 +154,21 @@ export function EthDrive({ path }: { path?: string }) {
           verificationGasLimit,
         } as any;
         console.log("userOperation", userOperation);
-        const userOpHash = await selectedChainPublicClient!.readContract({
+        const userOpHash = await selectedChainPublicClient.readContract({
           abi: entryPointAbi,
           address: entryPointAddress,
           functionName: "getUserOpHash",
           args: [userOperation],
         });
         console.log("userOpHash", userOpHash);
-        const signature = await walletClient!.signMessage({
+        const signature = await walletClient.signMessage({
           message: { raw: userOpHash },
         });
         console.log("signature", signature);
         userOperation.signature = signature;
         console.log("userOperation", userOperation);
         const sendUserOperationRes = await request(
-          selectedChainConfig!.alchemyChainName,
+          selectedChainConfig.alchemyChainName,
           "eth_sendUserOperation",
           [userOperation, entryPointAddress],
         );
@@ -171,7 +183,7 @@ export function EthDrive({ path }: { path?: string }) {
             const interval = setInterval(async () => {
               console.log("pollReceipt... ", requestId);
               const userOperationReceipt = await request(
-                selectedChainConfig!.alchemyChainName,
+                selectedChainConfig.alchemyChainName,
                 "eth_getUserOperationReceipt",
                 [requestId],
               );
@@ -191,7 +203,7 @@ export function EthDrive({ path }: { path?: string }) {
         return userOperationReceipt.transactionHash;
       } else {
         console.log("account abstraction is not enabled");
-        const txHash = await walletClient!.sendTransaction({
+        const txHash = await walletClient.sendTransaction({
           to: account,
           data: callData,
         });
@@ -209,10 +221,13 @@ export function EthDrive({ path }: { path?: string }) {
 
   const handleTransaction = useCallback(
     async (to: Address, callData: Hex) => {
+      if (!walletClient) {
+        throw new Error("Wallet client not found");
+      }
       console.log("handleTransaction");
       console.log("to", to);
       console.log("callData", callData);
-      const txHash = await walletClient!.sendTransaction({
+      const txHash = await walletClient.sendTransaction({
         to,
         data: callData,
       });
@@ -345,24 +360,22 @@ export function EthDrive({ path }: { path?: string }) {
               {selectedDirectoryPath == selectedDirectory.path &&
                 selectedDirectory.files.map((file, i) => (
                   <React.Fragment key={`files_${i}`}>
-                    {file.amount !== "0" && (
-                      <Card
-                        className="flex items-center p-2 cursor-pointer w-full mb-2"
-                        draggable
-                        onDragStart={handleDragStart(file)}
-                      >
-                        <File className="h-4 w-4 mr-2" />
-                        {file.type == "native" && (
-                          <span>{formatEther(BigInt(file.amount))} ETH</span>
-                        )}
-                        {file.type == "weth" && (
-                          <span>{formatEther(BigInt(file.amount))} WETH</span>
-                        )}
-                        {file.type == "ccip" && (
-                          <span>{formatEther(BigInt(file.amount))} BnM</span>
-                        )}
-                      </Card>
-                    )}
+                    <Card
+                      className="flex items-center p-2 cursor-pointer w-full mb-2"
+                      draggable
+                      onDragStart={handleDragStart(file)}
+                    >
+                      <File className="h-4 w-4 mr-2" />
+                      {file.type == "native" && (
+                        <span>{formatEther(BigInt(file.amount))} ETH</span>
+                      )}
+                      {file.type == "weth" && (
+                        <span>{formatEther(BigInt(file.amount))} WETH</span>
+                      )}
+                      {file.type == "ccip" && (
+                        <span>{formatEther(BigInt(file.amount))} BnM</span>
+                      )}
+                    </Card>
                   </React.Fragment>
                 ))}
             </div>

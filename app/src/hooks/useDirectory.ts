@@ -229,12 +229,14 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
           functionName: "balanceOf",
           args: [tokenBoundAccount],
         });
-        files.push({
-          type: "weth",
-          chainId: _chainId,
-          address: sepoliaWETHAddress,
-          amount: wethBalance.toString(),
-        });
+        if (wethBalance > 0) {
+          files.push({
+            type: "weth",
+            chainId: _chainId,
+            address: sepoliaWETHAddress,
+            amount: wethBalance.toString(),
+          });
+        }
       }
       if (
         connectedAddress &&
