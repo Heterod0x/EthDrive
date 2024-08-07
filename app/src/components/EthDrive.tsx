@@ -1,6 +1,7 @@
 "use client";
 
-import { File, Folder } from "lucide-react";
+import { CheckCircle2, File, Folder, Loader2, XCircle } from "lucide-react";
+import Link from "next/link";
 import React, { useCallback, useState } from "react";
 import {
   Address,
@@ -10,7 +11,7 @@ import {
   parseEther,
   toHex,
 } from "viem";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 
 import { ExpandableDirectory } from "@/components/ExpandableDirectory";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ export function EthDrive({ path }: { path?: string }) {
     chainId: connectedChainId,
     address: connectedAddress,
   } = useAccount();
+  const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
 
   const {
@@ -71,14 +73,11 @@ export function EthDrive({ path }: { path?: string }) {
     chainAddresses: selectedChainAddresses,
   } = useChain(selectedDirectoryChainId);
 
-  const [isOlnyShowConnectedDirectory, setIsOlnyShowConnectedDirectory] =
-    useState(false);
-  const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
-    useState(false);
-  const [createDirectoryName, setCreateDirectoryName] = useState("");
-
   const handleTransactionAsDirectory = useCallback(
     async (callData: Hex) => {
+      setCurrentStep("");
+      setTransactionHash("");
+      setError("");
       if (!walletClient) {
         throw new Error("Wallet client not found");
       }
@@ -96,6 +95,9 @@ export function EthDrive({ path }: { path?: string }) {
       const account = selectedDirectory.tokenBoundAccount as Address;
       console.log("account", account);
       if (selectedChainConfig.isAccountAbstractionEnabled) {
+        setIsTransactionStatusModalOpen(true);
+        setSteps(accountAbstractionSteps as any);
+        setCurrentStep("creating-user-operation");
         console.log("account abstraction is enabled");
         const nonce = await selectedChainPublicClient.readContract({
           abi: ethDriveAccountAbi,
@@ -165,12 +167,14 @@ export function EthDrive({ path }: { path?: string }) {
           args: [userOperation],
         });
         console.log("userOpHash", userOpHash);
+        setCurrentStep("wait-for-user-signature");
         const signature = await walletClient.signMessage({
           message: { raw: userOpHash },
         });
         console.log("signature", signature);
         userOperation.signature = signature;
         console.log("userOperation", userOperation);
+        setCurrentStep("sending-user-operation");
         const sendUserOperationRes = await request(
           selectedChainConfig.alchemyChainName,
           "eth_sendUserOperation",
@@ -182,6 +186,7 @@ export function EthDrive({ path }: { path?: string }) {
         }
         const requestId = sendUserOperationRes.result;
         console.log("requestId", requestId);
+        setCurrentStep("wait-for-block-confirmation");
         const pollReceipt = async (requestId: string): Promise<any> => {
           return new Promise((resolve, reject) => {
             const interval = setInterval(async () => {
@@ -204,7 +209,11 @@ export function EthDrive({ path }: { path?: string }) {
         };
         const userOperationReceipt = await pollReceipt(requestId);
         console.log("userOperationReceipt", userOperationReceipt);
-        return userOperationReceipt.transactionHash;
+        setCurrentStep("confirmed");
+        const txHash = userOperationReceipt.transactionHash;
+        console.log("txHash", txHash);
+        setTransactionHash(txHash);
+        return txHash;
       } else {
         console.log("account abstraction is not enabled");
         await handleTransaction(account, BigInt(0), callData as Hex);
@@ -221,30 +230,53 @@ export function EthDrive({ path }: { path?: string }) {
 
   const handleTransaction = useCallback(
     async (to: Address, value = BigInt(0), callData: Hex) => {
-      if (!walletClient) {
-        throw new Error("Wallet client not found");
-      }
-      if (!connectedChainId) {
-        throw new Error("Connected chain id not found");
-      }
-      if (!selectedDirectoryChainId) {
-        throw new Error("Selected directory chain id not found");
-      }
-      console.log("connectedChainId", connectedChainId);
-      console.log("selectedDirectoryChainId", selectedDirectoryChainId);
-      if (connectedChainId !== selectedDirectoryChainId) {
-        console.log("switching chain...");
-        await walletClient.switchChain({ id: selectedDirectoryChainId });
-      } else {
-        console.log("handleTransaction");
-        console.log("to", to);
-        console.log("callData", callData);
-        const txHash = await walletClient.sendTransaction({
-          to,
-          value,
-          data: callData,
-        });
-        console.log("txHash", txHash);
+      setCurrentStep("");
+      setTransactionHash("");
+      setError("");
+      try {
+        if (!publicClient) {
+          throw new Error("Public client not found");
+        }
+        if (!walletClient) {
+          throw new Error("Wallet client not found");
+        }
+        if (!connectedChainId) {
+          throw new Error("Connected chain id not found");
+        }
+        if (!selectedDirectoryChainId) {
+          throw new Error("Selected directory chain id not found");
+        }
+        setIsTransactionStatusModalOpen(true);
+        setSteps(transactionSteps as any);
+        setCurrentStep("checking-network");
+        console.log("connectedChainId", connectedChainId);
+        console.log("selectedDirectoryChainId", selectedDirectoryChainId);
+        if (connectedChainId !== selectedDirectoryChainId) {
+          console.log("switching chain...");
+          setError("Please switch to the directory chain");
+          await walletClient.switchChain({ id: selectedDirectoryChainId });
+          setIsTransactionStatusModalOpen(false);
+        } else {
+          setCurrentStep("wait-for-user-signature");
+          console.log("handleTransaction");
+          console.log("to", to);
+          console.log("callData", callData);
+          const txHash = await walletClient.sendTransaction({
+            to,
+            value,
+            data: callData,
+          });
+          console.log("txHash", txHash);
+          setCurrentStep("wait-for-block-confirmation");
+          setTransactionHash(txHash);
+          const receipt = await publicClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          console.log("receipt", receipt);
+          setCurrentStep("confirmed");
+        }
+      } catch (error: any) {
+        setError(error.message);
       }
     },
     [walletClient, connectedChainId, selectedDirectoryChainId],
@@ -294,6 +326,66 @@ export function EthDrive({ path }: { path?: string }) {
     const to = chainlinkCCIPBnMAddresses[chainId];
     handleTransaction(to as Address, BigInt(0), callData as Hex);
   }
+
+  const [isOlnyShowConnectedDirectory, setIsOlnyShowConnectedDirectory] =
+    useState(false);
+  const [isCreateDirectoryModalOpen, setIsCreateDirectoryModalOpen] =
+    useState(false);
+  const [createDirectoryName, setCreateDirectoryName] = useState("");
+  const [isTransactionStatusModalOpen, setIsTransactionStatusModalOpen] =
+    useState(false);
+
+  const transactionSteps = [
+    { key: "checking-network", label: "Checking Network" },
+    {
+      key: "wait-for-user-signature",
+      label: "Waiting for User Signature",
+    },
+    {
+      key: "wait-for-block-confirmation",
+      label: "Waiting for Block Confirmation",
+    },
+    { key: "confirmed", label: "Transaction Confirmed" },
+  ];
+  const accountAbstractionSteps = [
+    { key: "creating-user-operation", label: "Creating User Operation" },
+    {
+      key: "wait-for-user-signature",
+      label: "Waiting for User Signature",
+    },
+    { key: "sending-user-operation", label: "Sending User Operation" },
+    {
+      key: "wait-for-block-confirmation",
+      label: "Waiting for Block Confirmation",
+    },
+    { key: "confirmed", label: "Transaction Confirmed" },
+  ];
+
+  const [steps, setSteps] = useState<{ key: string; label: string }[]>([]);
+  const [currentStep, setCurrentStep] = useState("");
+  const [transactionHash, setTransactionHash] = useState<string>("");
+  const [error, setError] = useState("");
+
+  const getStepIcon = (stepKey: string): JSX.Element => {
+    const currentStepIndex = steps.findIndex(
+      (step) => step.key === currentStep,
+    );
+    const stepIndex = steps.findIndex((step) => step.key === stepKey);
+
+    if (error && stepIndex >= currentStepIndex) {
+      return <XCircle className="w-6 h-6 text-red-500" />;
+    }
+    if (
+      stepIndex < currentStepIndex ||
+      (stepIndex === steps.length - 1 && stepKey === currentStep)
+    ) {
+      return <CheckCircle2 className="w-6 h-6 text-green-500" />;
+    }
+    if (stepKey === currentStep) {
+      return <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />;
+    }
+    return <div className="w-6 h-6 rounded-full border-2 border-gray-300" />;
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -489,6 +581,47 @@ export function EthDrive({ path }: { path?: string }) {
             </Button>
             <Button onClick={handleCreateDirectoryTransaction}>Create</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={isTransactionStatusModalOpen}
+        onOpenChange={setIsTransactionStatusModalOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transaction Status</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <div className="space-y-4">
+              {steps.map((step) => (
+                <div key={step.key} className="flex items-center space-x-4">
+                  {getStepIcon(step.key)}
+                  <div className="flex-grow">
+                    <p
+                      className={`font-medium ${currentStep === step.key ? "text-blue-500" : ""}`}
+                    >
+                      {step.label}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {transactionHash && (
+              <div className="mt-4 p-2 bg-blue-100 border border-blue-300 rounded text-blue-700 break-all text-xs">
+                <p className="mb-2">Transaction Detail:</p>
+                <Link
+                  href={`${selectedChainConfig?.exproler}/tx/${transactionHash}`}
+                >
+                  {selectedChainConfig?.exproler}/tx/${transactionHash}
+                </Link>
+              </div>
+            )}
+            {error && (
+              <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded text-red-700 break-all text-xs">
+                {error}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
