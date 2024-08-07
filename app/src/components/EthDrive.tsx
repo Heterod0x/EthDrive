@@ -1,7 +1,10 @@
 "use client";
 
+import { Core } from "@walletconnect/core";
+import { buildApprovedNamespaces, getSdkError } from "@walletconnect/utils";
+import { Web3Wallet, Web3WalletTypes } from "@walletconnect/web3wallet";
 import { File, Folder } from "lucide-react";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Address,
   Hex,
@@ -344,6 +347,108 @@ export function EthDrive({ path }: { path?: string }) {
     [draggedFile, rootDirectory],
   );
 
+  const [web3wallet, setWeb3Wallet] = useState<any>();
+  const [uri, setUri] = useState("");
+  const [name, setName] = useState("");
+  const [topic, setTopic] = useState("");
+  const sessionEstablished = useRef(false);
+
+  useEffect(() => {
+    (async () => {
+      console.log("walletConnect: init");
+      const core = new Core({
+        projectId:
+          process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ||
+          "3a8170812b534d0ff9d794f19a901d64",
+      });
+      const web3wallet = await Web3Wallet.init({
+        core,
+        metadata: {
+          name: "EthDrive",
+          description: "EthDrive Directory Account",
+          url: "super-eth-drive.vercel.app",
+          icons: ["https://super-eth-drive.vercel.app/logo.png"],
+        },
+      });
+      setWeb3Wallet(web3wallet);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (
+      !selectedDirectoryChainId ||
+      !selectedDirectory.tokenBoundAccount ||
+      !web3wallet
+    ) {
+      return;
+    }
+    (async () => {
+      async function onSessionProposal({
+        id,
+        params,
+      }: Web3WalletTypes.SessionProposal) {
+        console.log("walletConnect: onSessionProposal", params);
+        if (selectedDirectoryChainId !== 11155111) {
+          throw new Error("Wallet Connect only supports sepolia chain");
+        }
+        try {
+          const approvedNamespaces = buildApprovedNamespaces({
+            proposal: params,
+            supportedNamespaces: {
+              eip155: {
+                chains: [`eip155:${selectedDirectoryChainId}`],
+                methods: ["eth_sendTransaction", "personal_sign"],
+                events: ["accountsChanged", "chainChanged"],
+                accounts: [
+                  `eip155:${selectedDirectoryChainId}:${selectedDirectory.tokenBoundAccount}`,
+                ],
+              },
+            },
+          });
+          const { topic } = await web3wallet.approveSession({
+            id,
+            namespaces: approvedNamespaces,
+          });
+          console.log("walletConnect: session approved", topic);
+          setTopic(topic);
+          sessionEstablished.current = true; // Mark session as established
+        } catch (error) {
+          console.log("walletConnect: error", error);
+          await web3wallet.rejectSession({
+            id: id,
+            reason: getSdkError("USER_REJECTED"),
+          });
+        }
+      }
+      console.log("walletConnect: setOnSessionProposal");
+      web3wallet.on("session_proposal", onSessionProposal);
+    })();
+
+    return () => {
+      if (sessionEstablished.current && web3wallet && topic) {
+        console.log("walletConnect: disconnect");
+        try {
+          web3wallet.disconnectSession({
+            topic,
+            reason: getSdkError("USER_DISCONNECTED"),
+          });
+        } catch (error) {
+          console.log("walletConnect: error", error);
+        }
+        setWeb3Wallet(undefined);
+        setUri("");
+        setTopic("");
+        setName("");
+        sessionEstablished.current = false;
+      }
+    };
+  }, [
+    selectedDirectoryChainId,
+    selectedDirectory.tokenBoundAccount,
+    web3wallet,
+    topic,
+  ]);
+
   return (
     <div className="flex flex-col h-screen">
       <Header
@@ -466,6 +571,21 @@ export function EthDrive({ path }: { path?: string }) {
                     Add 1 CCIP BnM Token
                   </Button>
                 )}
+                <div>
+                  <Input
+                    type="text"
+                    placeholder="wc:"
+                    className="mb-2"
+                    onChange={(e) => setUri(e.target.value)}
+                  />
+                  <Button
+                    onClick={() => {
+                      web3wallet.pair({ uri });
+                    }}
+                  >
+                    Pair
+                  </Button>
+                </div>
               </div>
             )}
           </div>
