@@ -3,13 +3,15 @@
 import {
   SmartAccountClient,
   SmartContractAccount,
+  baseSepolia,
   createSmartAccountClient,
   getEntryPoint,
+  optimismSepolia,
+  sepolia,
   toSmartContractAccount,
 } from "@alchemy/aa-core";
-import { baseSepolia, optimismSepolia, sepolia } from "@alchemy/aa-core";
 import { useCallback, useEffect, useState } from "react";
-import { Address, PublicClient, WalletClient, http, toHex } from "viem";
+import { Address, Hex, PublicClient, WalletClient, http, toHex } from "viem";
 
 import { dummySignature, getRpcUrl, request } from "@/lib/alchemy";
 
@@ -48,7 +50,8 @@ export function useSmartAccount(
       } else {
         return;
       }
-      const transport = http(getRpcUrl(alchemyChainName)) as any;
+      const rpcUrl = getRpcUrl(alchemyChainName);
+      const transport = http(rpcUrl) as any; // to bypass type check
       const entryPoint = await getEntryPoint(chain, { version: "0.6.0" });
       const smartAccount = await toSmartContractAccount({
         source: "EthDriveAccount",
@@ -57,13 +60,13 @@ export function useSmartAccount(
         entryPoint,
         accountAddress,
         getDummySignature: () => dummySignature,
-        signMessage: async ({ message }: any) => {
-          console.log("signMessage", message);
+        signMessage: async ({ message }: { message: { raw: Hex } }) => {
+          console.log("smartContractAccount: signMessage", message);
           return await walletClient.signMessage({
             message,
-          } as any);
+          } as any); // to bypass type check for account
         },
-      } as any);
+      } as any); // set any because we only implement requrired method to make it work
       setSmartAccount(smartAccount);
       const smartAccountClient = createSmartAccountClient({
         transport,

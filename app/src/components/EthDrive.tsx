@@ -1,5 +1,6 @@
 "use client";
 
+import { deepHexlify } from "@alchemy/aa-core";
 import { File, Folder } from "lucide-react";
 import Link from "next/link";
 import React, { useCallback, useState } from "react";
@@ -31,6 +32,7 @@ import { useDragAndDrop } from "@/hooks/useDragAndDrop";
 import { useSmartAccount } from "@/hooks/useSmartAccount";
 import { useTransactionStatus } from "@/hooks/useTransactionStatus";
 import { useWalletConnect } from "@/hooks/useWalletConnect";
+import { request as requestAlchemy } from "@/lib/alchemy";
 
 import { ethDriveAbi } from "../../../contracts/shared/app/abi";
 import { ccipBnMAbi } from "../../../contracts/shared/app/external-abi";
@@ -131,11 +133,32 @@ export function EthDrive({ path }: { path?: string }) {
           });
         const uoStruct = _uoStruct as any;
         console.log("uoStruct", uoStruct);
+        console.log("custom fee estimation");
         const { maxFeePerGas, maxPriorityFeePerGas } =
           await getFeeEstimateForSmartAccountTransaction();
         uoStruct.maxFeePerGas = maxFeePerGas;
         uoStruct.maxPriorityFeePerGas = maxPriorityFeePerGas;
-        uoStruct.paymasterAndData = selectedChainAddresses.ethDrivePaymaster;
+        if (selectedChainConfig.alchemyGasManagerPolicyId) {
+          const requestPaymasterAndDataRes = await requestAlchemy(
+            selectedChainConfig.alchemyChainName,
+            "alchemy_requestPaymasterAndData",
+            [
+              {
+                policyId: selectedChainConfig.alchemyGasManagerPolicyId,
+                entryPoint: entryPointAddress,
+                userOperation: deepHexlify(uoStruct),
+              },
+            ],
+          );
+          if (requestPaymasterAndDataRes.error) {
+            throw new Error(requestPaymasterAndDataRes.error.message);
+          }
+          const { paymasterAndData } = requestPaymasterAndDataRes.result;
+          console.log("paymasterAndData", paymasterAndData);
+          uoStruct.paymasterAndData = paymasterAndData;
+        } else {
+          uoStruct.paymasterAndData = selectedChainAddresses.ethDrivePaymaster;
+        }
         setCurrentStep("wait-for-user-signature");
         const request = await selectedChainSmartAccountClient.signUserOperation(
           {

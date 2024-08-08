@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@alchemy/aa-alchemy": "^3.19.0",
     "@alchemy/aa-core": "^3.19.0",
     "@apollo/client": "^3.11.2",
     "@radix-ui/react-dialog": "^1.1.1",
