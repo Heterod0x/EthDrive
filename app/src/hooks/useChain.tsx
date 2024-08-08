@@ -26,5 +26,9 @@ export function useChain(chainId?: number) {
     return addresses[_chainId];
   }, [chainId]);
 
-  return { chainPublicClient, chainConfig, chainAddresses };
+  return {
+    chainPublicClient,
+    chainConfig,
+    chainAddresses,
+  };
 }

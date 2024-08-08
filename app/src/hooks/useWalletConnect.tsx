@@ -13,7 +13,7 @@ import { ethDriveAccountAbi } from "../../../contracts/shared/app/abi";
 
 export function useWalletConnect(
   selectedDirectory: Directory,
-  handleTransactionAsDirectory: (callData: Hex) => Promise<Hex>,
+  handleTransactionAsDirectory: (callData: Hex) => void,
 ) {
   const [web3wallet, setWeb3Wallet] = useState<any>();
   const [uri, setUri] = useState("");
