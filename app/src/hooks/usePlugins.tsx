@@ -1,4 +1,10 @@
-import React, { ReactNode, createContext, useContext, useState } from "react";
+import React, {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 // Define the shape of the plugins state
 interface PluginsState {
@@ -20,9 +26,18 @@ const PluginsContext = createContext<PluginsContextValue | undefined>(
 export const PluginsProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [plugins, setPlugins] = useState<PluginsState>({
-    isAccountKitEnabled: true,
+  const [plugins, setPlugins] = useState<PluginsState>(() => {
+    // Load the initial state from localStorage if available
+    const savedPlugins = localStorage.getItem("pluginsState");
+    return savedPlugins
+      ? JSON.parse(savedPlugins)
+      : { isAccountKitEnabled: true }; // default state
   });
+
+  useEffect(() => {
+    // Save the plugins state to localStorage whenever it changes
+    localStorage.setItem("pluginsState", JSON.stringify(plugins));
+  }, [plugins]);
 
   return (
     <PluginsContext.Provider value={{ plugins, setPlugins }}>

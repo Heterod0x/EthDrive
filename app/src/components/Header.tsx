@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useAccount as useAccountKitAccount,
   useAuthModal,
   useLogout,
   useSignerStatus,
@@ -47,7 +46,11 @@ export function Header({
                   <Plus className="mr-2 h-4 w-4" /> New
                 </Button>
               )}
-              <ConnectButton />
+              <ConnectButton
+                chainStatus={"icon"}
+                accountStatus={"avatar"}
+                showBalance={false}
+              />
             </>
           )}
           {plugins.isAccountKitEnabled && (
