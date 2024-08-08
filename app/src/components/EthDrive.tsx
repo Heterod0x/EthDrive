@@ -51,6 +51,7 @@ import { CopyToClipboard } from "./CopyToClipboard";
 import { DirectoryPathBreadcrumb } from "./DirectoryPathBreadcrumb";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
+import { DepositManagerPlugin } from "./DepositManagerPlugin";
 
 export function EthDrive({ path }: { path?: string }) {
   const { plugins, setPlugins } = usePlugins();
@@ -659,6 +660,7 @@ export function EthDrive({ path }: { path?: string }) {
               />
               <Label>Enable Alchemy Account kit</Label>
             </div>
+            <DepositManagerPlugin />
           </div>
         </DialogContent>
       </Dialog>

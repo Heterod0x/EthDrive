@@ -10,14 +10,14 @@ import { WagmiProvider } from "wagmi";
 
 import { PluginsProvider } from "@/hooks/usePlugins";
 import { alchemyConfig } from "@/lib/alchemy";
-import { virtualChain } from "@/lib/chain";
+import { virtualChain, conduitChain } from "@/lib/chain";
 
 export const wagmiConfig = getDefaultConfig({
   appName: "ETHDrive",
   projectId:
     process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ||
     "3a8170812b534d0ff9d794f19a901d64",
-  chains: [virtualChain, sepolia, optimismSepolia, baseSepolia],
+  chains: [virtualChain, sepolia, optimismSepolia, baseSepolia, conduitChain],
   ssr: true,
 });
 

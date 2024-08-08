@@ -11,6 +11,9 @@ import { defaultSignerPrivateKey } from "./shared/key";
 
 import "./tasks/depositToCCIPTokenTransferor";
 import "./tasks/depositToPaymaster";
+import "./tasks/syncWorldIdRoots";
+
+require('dotenv').config();
 
 tenderly.setup({ automaticVerifications: true });
 
@@ -36,7 +39,7 @@ const config: HardhatUserConfig = {
     },
     "optimism-sepolia": {
       chainId: 11155420,
-      url: "	https://sepolia.optimism.io",
+      url: "https://sepolia.optimism.io",
       accounts,
     },
     "base-sepolia": {
@@ -44,6 +47,10 @@ const config: HardhatUserConfig = {
       url: "https://sepolia.base.org",
       accounts,
     },
+    conduit: {
+      url: process.env.CONDUIT_RPC,
+      accounts: accounts,
+    }
   },
   tenderly: {
     project: "hackathon",

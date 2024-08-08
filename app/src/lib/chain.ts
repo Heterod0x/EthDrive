@@ -23,6 +23,22 @@ export const virtualChain = defineChain({
   testnet: true,
 });
 
+export const conduitChain = defineChain({
+  id: 15830,
+  name: "Conduit",
+  nativeCurrency: {
+    decimals: 18,
+    name: "Ether",
+    symbol: "ETH",
+  },
+  rpcUrls: {
+    default: {
+      http: [process.env.NEXT_PUBLIC_CUSTOM_ROLLUP_RPC!],
+    },
+  },
+  testnet: true,
+});
+
 export const chainPublicClients = {
   "9999999": createPublicClient({
     chain: virtualChain,
@@ -38,6 +54,10 @@ export const chainPublicClients = {
   }),
   "11155420": createPublicClient({
     chain: optimismSepolia,
+    transport: http(),
+  }),
+  "15830": createPublicClient({
+    chain: conduitChain,
     transport: http(),
   }),
 };
