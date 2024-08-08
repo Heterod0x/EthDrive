@@ -1,39 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { VerificationLevel } from "@worldcoin/idkit-core";
-import { verifyCloudProof } from "@worldcoin/idkit-core/backend";
 import { ethers } from "ethers";
+import ABI from "@/constants/abis/GasDepositManager.json";
 
-const appId = process.env.NEXT_PUBLIC_WORLD_ID_APP_ID as `app_${string}`;
-const action = process.env.NEXT_PUBLIC_WORLD_ID_ACTION!;
 const customRollupRpc = process.env.NEXT_PUBLIC_CUSTOM_ROLLUP_RPC;
-
-type WorldIdProof = {
-    proof: string;
-    merkle_root: string;
-    nullifier_hash: string;
-    verification_level: VerificationLevel;
-}
+const gasDepositManagerAddress = process.env.NEXT_PUBLIC_GAS_DEPOSIT_MANAGER_ADDRESS;
 
 type Request = {
-    signal: string; // arbitrary value for proof
-    proof: WorldIdProof;
-    account: string; // account address;
+    account: string;
+    fee: string;
 }
 
 export async function POST(req: NextRequest) {
   const body: Request = await req.json();
-  const {signal, proof, account} = body;
+  const {account, fee} = body;
 
-  // 1. Verify World ID proof
-  const {success} = await verifyCloudProof(proof, appId, action, signal);
-
-  // 2. Check account balance in custom rollup
   const provider = new ethers.JsonRpcProvider(customRollupRpc);
-  const balance = await provider.getBalance(account);
-  const hasBalance = balance > 0;
+  const contract = new ethers.Contract(gasDepositManagerAddress!, ABI, provider);
+
+  // 1. Check if account has been verified by World ID and deposited
+  const payable = await contract.isPayable(account);
+
+  // 2. Check if account has deposited enough amount for fee
+  const depositAmount = await contract.deposited(account);
+  const hasEnoughDeposit = depositAmount > BigInt(fee);
+
+  // 3. TODO: Create signature
+  const signature = '0x...'
 
   return NextResponse.json({
-    ok: success && hasBalance,
-    body,
+    ok: payable && hasEnoughDeposit,
+    signature,
   });
 }

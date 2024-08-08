@@ -308,16 +308,12 @@ export function EthDrive({ path }: { path?: string }) {
     useState(false);
   const [isTransactionStatusModalOpen, setIsTransactionStatusModalOpen] =
     useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-screen">
       <Header
         openCreateDirectoryDialog={() => {
           setIsCreateDirectoryModalOpen(true);
-        }}
-        openSettingsDialog={() => {
-          setIsSettingsModalOpen(true);
         }}
       />
       <div className="flex flex-grow">
@@ -546,20 +542,6 @@ export function EthDrive({ path }: { path?: string }) {
                 {error}
               </div>
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={isSettingsModalOpen} onOpenChange={setIsSettingsModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Plugins</DialogTitle>
-          </DialogHeader>
-          <div className="pt-4">
-            <div className="flex items-center space-x-2 mb-4">
-              <Switch />
-              <Label htmlFor="airplane-mode">World ID Integration</Label>
-            </div>
-            <Button>Collect World ID</Button>
           </div>
         </DialogContent>
       </Dialog>
