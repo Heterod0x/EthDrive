@@ -84,8 +84,6 @@ export function EthDrive({ path }: { path?: string }) {
     setSelectedDirectoryPath,
   } = useDirectory(path, connectedAddress);
 
-  const { chainAddresses: connectedChainAddresses } =
-    useChain(connectedChainId);
   const {
     chainPublicClient: selectedChainPublicClient,
     chainConfig: selectedChainConfig,
@@ -131,12 +129,6 @@ export function EthDrive({ path }: { path?: string }) {
         if (!selectedChainPublicClient) {
           throw new Error("Chain public client not found");
         }
-        if (!selectedChainSmartAccount) {
-          throw new Error("Smart account not found");
-        }
-        if (!selectedChainSmartAccountClient) {
-          throw new Error("Smart account client not found");
-        }
         if (!selectedChainConfig) {
           throw new Error("Chain config not found");
         }
@@ -170,6 +162,12 @@ export function EthDrive({ path }: { path?: string }) {
         } else {
           if (selectedChainConfig.isAccountAbstractionEnabled) {
             console.log("account abstraction is enabled");
+            if (!selectedChainSmartAccount) {
+              throw new Error("Smart account not found");
+            }
+            if (!selectedChainSmartAccountClient) {
+              throw new Error("Smart account client not found");
+            }
             setCurrentStep("creating-user-operation");
             const _uoStruct =
               await selectedChainSmartAccountClient.buildUserOperation({
@@ -235,7 +233,7 @@ export function EthDrive({ path }: { path?: string }) {
             await handleTransaction(account, BigInt(0), callData as Hex);
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         setError(e.message);
       }
     },
