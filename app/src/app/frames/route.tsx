@@ -9,6 +9,7 @@ const handleRequest = frames(async () => {
     image: "https://super-eth-drive.vercel.app/logo.png",
     buttons: [
       <Button
+        key="1"
         action="tx"
         target={{
           pathname: `/frames/txdata`,
