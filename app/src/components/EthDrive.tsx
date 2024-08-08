@@ -29,6 +29,7 @@ import { Switch } from "@/components/ui/switch";
 import { useChain } from "@/hooks/useChain";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useDragAndDrop } from "@/hooks/useDragAndDrop";
+import { useSmartAccount } from "@/hooks/useSmartAccount";
 import { useTransactionStatus } from "@/hooks/useTransactionStatus";
 import { useWalletConnect } from "@/hooks/useWalletConnect";
 import { dummySignature, request } from "@/lib/alchemy";
@@ -70,15 +71,12 @@ export function EthDrive({ path }: { path?: string }) {
     useChain(connectedChainId);
   const {
     chainPublicClient: selectedChainPublicClient,
-    chainSmartAccountClient: selectedChainSmartAccountClient,
     chainConfig: selectedChainConfig,
     chainAddresses: selectedChainAddresses,
   } = useChain(selectedDirectoryChainId);
 
-  console.log(
-    "selectedChainSmartAccountClient",
-    selectedChainSmartAccountClient,
-  );
+  const { smartAccountClient: selectedChainSmartAccountClient } =
+    useSmartAccount(selectedDirectoryChainId);
 
   const {
     transactionSteps,
@@ -211,8 +209,6 @@ export function EthDrive({ path }: { path?: string }) {
         const requestId = sendUserOperationRes.result;
         console.log("requestId", requestId);
         setCurrentStep("wait-for-block-confirmation");
-
-        // selectedChainSmartAccountClient
         const txHash =
           await selectedChainSmartAccountClient.waitForUserOperationTransaction(
             {
