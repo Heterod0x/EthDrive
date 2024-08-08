@@ -1,8 +1,12 @@
 const alchemyKey =
   process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || "oKxs-03sij-U_N0iOlrSsZFr29-IqbuF";
 
+export function getRpcUrl(network: string) {
+  return `https://${network}.g.alchemy.com/v2/${alchemyKey}`;
+}
+
 export async function request(network: string, method: string, params: any) {
-  const res = await fetch(`https://${network}.g.alchemy.com/v2/${alchemyKey}`, {
+  const res = await fetch(getRpcUrl(network), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

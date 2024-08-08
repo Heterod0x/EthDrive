@@ -70,9 +70,15 @@ export function EthDrive({ path }: { path?: string }) {
     useChain(connectedChainId);
   const {
     chainPublicClient: selectedChainPublicClient,
+    chainSmartAccountClient: selectedChainSmartAccountClient,
     chainConfig: selectedChainConfig,
     chainAddresses: selectedChainAddresses,
   } = useChain(selectedDirectoryChainId);
+
+  console.log(
+    "selectedChainSmartAccountClient",
+    selectedChainSmartAccountClient,
+  );
 
   const {
     transactionSteps,
@@ -96,11 +102,14 @@ export function EthDrive({ path }: { path?: string }) {
       if (!walletClient) {
         throw new Error("Wallet client not found");
       }
-      if (!selectedChainConfig) {
-        throw new Error("Chain config not found");
-      }
       if (!selectedChainPublicClient) {
         throw new Error("Chain public client not found");
+      }
+      if (!selectedChainSmartAccountClient) {
+        throw new Error("Chain smart account client not found");
+      }
+      if (!selectedChainConfig) {
+        throw new Error("Chain config not found");
       }
       if (!selectedChainAddresses) {
         throw new Error("Chain addresses not found");
@@ -202,33 +211,17 @@ export function EthDrive({ path }: { path?: string }) {
         const requestId = sendUserOperationRes.result;
         console.log("requestId", requestId);
         setCurrentStep("wait-for-block-confirmation");
-        const pollReceipt = async (requestId: string): Promise<any> => {
-          return new Promise((resolve, reject) => {
-            const interval = setInterval(async () => {
-              console.log("pollReceipt... ", requestId);
-              const userOperationReceipt = await request(
-                selectedChainConfig.alchemyChainName,
-                "eth_getUserOperationReceipt",
-                [requestId],
-              );
-              if (userOperationReceipt.error) {
-                clearInterval(interval);
-                reject(userOperationReceipt.error);
-              }
-              if (userOperationReceipt.result) {
-                clearInterval(interval);
-                resolve(userOperationReceipt.result.receipt);
-              }
-            }, 2000);
-          });
-        };
-        const userOperationReceipt = await pollReceipt(requestId);
-        console.log("userOperationReceipt", userOperationReceipt);
+
+        // selectedChainSmartAccountClient
+        const txHash =
+          await selectedChainSmartAccountClient.waitForUserOperationTransaction(
+            {
+              hash: requestId,
+            },
+          );
         setCurrentStep("confirmed");
-        const txHash = userOperationReceipt.transactionHash;
         console.log("txHash", txHash);
         setTransactionHash(txHash);
-        return txHash;
       } else {
         console.log("account abstraction is not enabled");
         await handleTransaction(account, BigInt(0), callData as Hex);
