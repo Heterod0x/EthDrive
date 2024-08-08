@@ -1,11 +1,15 @@
 "use client";
 
+import { AlchemyClientState } from "@account-kit/core";
+import { AlchemyAccountProvider } from "@account-kit/react";
 import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { QueryClient } from "@tanstack/react-query";
 import { baseSepolia, optimismSepolia, sepolia } from "viem/chains";
 import { WagmiProvider } from "wagmi";
 
+import { PluginsProvider } from "@/hooks/usePlugins";
+import { alchemyConfig } from "@/lib/alchemy";
 import { virtualChain } from "@/lib/chain";
 
 export const wagmiConfig = getDefaultConfig({
@@ -19,11 +23,25 @@ export const wagmiConfig = getDefaultConfig({
 
 export const queryClient = new QueryClient();
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  initialState,
+  children,
+}: {
+  initialState?: AlchemyClientState;
+  children: React.ReactNode;
+}) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>{children}</RainbowKitProvider>
+        <RainbowKitProvider>
+          <AlchemyAccountProvider
+            config={alchemyConfig}
+            queryClient={queryClient}
+            initialState={initialState}
+          >
+            <PluginsProvider>{children}</PluginsProvider>
+          </AlchemyAccountProvider>
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
