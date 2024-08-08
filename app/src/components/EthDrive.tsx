@@ -1,10 +1,13 @@
 "use client";
 
-import { useSmartAccountClient } from "@account-kit/react";
+import {
+  useAccount as useAccountKitAccount,
+  useSmartAccountClient,
+} from "@account-kit/react";
 import { deepHexlify } from "@alchemy/aa-core";
 import { File, Folder } from "lucide-react";
 import Link from "next/link";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Address,
   Hex,
@@ -12,7 +15,11 @@ import {
   formatEther,
   parseEther,
 } from "viem";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import {
+  usePublicClient,
+  useAccount as useWagmiAccount,
+  useWalletClient,
+} from "wagmi";
 
 import { ExpandableDirectory } from "@/components/ExpandableDirectory";
 import { Button } from "@/components/ui/button";
@@ -34,7 +41,7 @@ import { usePlugins } from "@/hooks/usePlugins";
 import { useSmartAccount } from "@/hooks/useSmartAccount";
 import { useTransactionStatus } from "@/hooks/useTransactionStatus";
 import { useWalletConnect } from "@/hooks/useWalletConnect";
-import { alchemyChains, request as requestAlchemy } from "@/lib/alchemy";
+import { alchemySepoliaChain, request as requestAlchemy } from "@/lib/alchemy";
 
 import { ethDriveAbi } from "../../../contracts/shared/app/abi";
 import { ccipBnMAbi } from "../../../contracts/shared/app/external-abi";
@@ -47,17 +54,26 @@ import { Sidebar } from "./Sidebar";
 
 export function EthDrive({ path }: { path?: string }) {
   const { plugins, setPlugins } = usePlugins();
-
   const {
     isConnected,
     chainId: connectedChainId,
-    address: connectedAddress,
-  } = useAccount();
+    address: wagmiAddress,
+  } = useWagmiAccount();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
   const { client: accountKitClient } = useSmartAccountClient({
     type: "LightAccount",
   });
+  const { address: accountKitAccountAddress } = useAccountKitAccount({
+    type: "LightAccount",
+  });
+  const connectedAddress = useMemo(() => {
+    if (plugins.isAccountKitEnabled) {
+      return accountKitAccountAddress;
+    } else {
+      return wagmiAddress;
+    }
+  }, [plugins.isAccountKitEnabled, wagmiAddress, accountKitAccountAddress]);
 
   const {
     rootDirectory,
@@ -74,7 +90,6 @@ export function EthDrive({ path }: { path?: string }) {
     chainPublicClient: selectedChainPublicClient,
     chainConfig: selectedChainConfig,
     chainAddresses: selectedChainAddresses,
-    alchemyChain: selectedChainAlchemyChain,
   } = useChain(selectedDirectoryChainId);
 
   const {
@@ -107,116 +122,130 @@ export function EthDrive({ path }: { path?: string }) {
       setCurrentStep("");
       setTransactionHash("");
       setError("");
-      if (!walletClient) {
-        throw new Error("Wallet client not found");
-      }
-      if (!selectedChainPublicClient) {
-        throw new Error("Chain public client not found");
-      }
-      if (!selectedChainSmartAccount) {
-        throw new Error("Smart account not found");
-      }
-      if (!selectedChainSmartAccountClient) {
-        throw new Error("Smart account client not found");
-      }
-      if (!selectedChainConfig) {
-        throw new Error("Chain config not found");
-      }
-      if (!selectedChainAddresses) {
-        throw new Error("Chain addresses not found");
-      }
-      if (!selectedChainAlchemyChain) {
-        throw new Error("Chain alchemy chain not found");
-      }
-      console.log("handleTransactionAsDirectory");
-      const account = selectedDirectory.tokenBoundAccount as Address;
-      console.log("account", account);
-      console.log("callData", callData);
-      if (plugins.isAccountKitEnabled && accountKitClient) {
-        const tx = await accountKitClient.sendTransaction({
-          to: account,
-          data: callData,
-          chain: selectedChainAlchemyChain,
-        });
-        console.log("tx", tx);
-      } else {
-        if (selectedChainConfig.isAccountAbstractionEnabled) {
-          console.log("account abstraction is enabled");
-          setIsTransactionStatusModalOpen(true);
-          setSteps(accountAbstractionSteps as any);
-          setCurrentStep("creating-user-operation");
-          const _uoStruct =
-            await selectedChainSmartAccountClient.buildUserOperation({
-              uo: callData,
-              account: selectedChainSmartAccount,
-            });
-          const uoStruct = _uoStruct as any;
-          console.log("uoStruct", uoStruct);
-          console.log("custom fee estimation");
-          const { maxFeePerGas, maxPriorityFeePerGas } =
-            await getFeeEstimateForSmartAccountTransaction();
-          uoStruct.maxFeePerGas = maxFeePerGas;
-          uoStruct.maxPriorityFeePerGas = maxPriorityFeePerGas;
-          if (selectedChainConfig.alchemyGasManagerPolicyId) {
-            const requestPaymasterAndDataRes = await requestAlchemy(
-              selectedChainConfig.alchemyChainName,
-              "alchemy_requestPaymasterAndData",
-              [
-                {
-                  policyId: selectedChainConfig.alchemyGasManagerPolicyId,
-                  entryPoint: entryPointAddress,
-                  userOperation: deepHexlify(uoStruct),
-                },
-              ],
-            );
-            if (requestPaymasterAndDataRes.error) {
-              throw new Error(requestPaymasterAndDataRes.error.message);
-            }
-            const { paymasterAndData } = requestPaymasterAndDataRes.result;
-            console.log("paymasterAndData", paymasterAndData);
-            uoStruct.paymasterAndData = paymasterAndData;
-          } else {
-            uoStruct.paymasterAndData =
-              selectedChainAddresses.ethDrivePaymaster;
+      setIsTransactionStatusModalOpen(true);
+      setSteps(accountAbstractionSteps as any);
+      try {
+        if (!walletClient) {
+          throw new Error("Wallet client not found");
+        }
+        if (!selectedChainPublicClient) {
+          throw new Error("Chain public client not found");
+        }
+        if (!selectedChainSmartAccount) {
+          throw new Error("Smart account not found");
+        }
+        if (!selectedChainSmartAccountClient) {
+          throw new Error("Smart account client not found");
+        }
+        if (!selectedChainConfig) {
+          throw new Error("Chain config not found");
+        }
+        if (!selectedChainAddresses) {
+          throw new Error("Chain addresses not found");
+        }
+        console.log("handleTransactionAsDirectory");
+        const account = selectedDirectory.tokenBoundAccount as Address;
+        console.log("account", account);
+        console.log("callData", callData);
+        if (plugins.isAccountKitEnabled) {
+          if (!accountKitClient) {
+            throw new Error("Account kit client not found");
           }
+          if (selectedDirectoryChainId !== 11155111) {
+            throw new Error("Account Kit mode only supports Sepolia chain");
+          }
+          console.log("AccountKitEnabled");
+          setCurrentStep("creating-user-operation");
           setCurrentStep("wait-for-user-signature");
-          const request =
-            await selectedChainSmartAccountClient.signUserOperation({
-              uoStruct,
-              account: selectedChainSmartAccount,
-            });
-          console.log("request", request);
           setCurrentStep("sending-user-operation");
-          const requestId =
-            await selectedChainSmartAccountClient.sendRawUserOperation(
-              request,
-              entryPointAddress,
-            );
-          console.log("requestId", requestId);
           setCurrentStep("wait-for-block-confirmation");
-          const txHash =
-            await selectedChainSmartAccountClient.waitForUserOperationTransaction(
-              {
-                hash: requestId,
-                retries: { intervalMs: 5000, multiplier: 1, maxRetries: 100 },
-              },
-            );
-          setCurrentStep("confirmed");
+          const txHash = await accountKitClient.sendTransaction({
+            to: account,
+            data: callData,
+            chain: alchemySepoliaChain,
+          });
           console.log("txHash", txHash);
           setTransactionHash(txHash);
+          setCurrentStep("confirmed");
         } else {
-          console.log("account abstraction is not enabled");
-          await handleTransaction(account, BigInt(0), callData as Hex);
+          if (selectedChainConfig.isAccountAbstractionEnabled) {
+            console.log("account abstraction is enabled");
+            setCurrentStep("creating-user-operation");
+            const _uoStruct =
+              await selectedChainSmartAccountClient.buildUserOperation({
+                uo: callData,
+                account: selectedChainSmartAccount,
+              });
+            const uoStruct = _uoStruct as any;
+            console.log("uoStruct", uoStruct);
+            console.log("custom fee estimation");
+            const { maxFeePerGas, maxPriorityFeePerGas } =
+              await getFeeEstimateForSmartAccountTransaction();
+            uoStruct.maxFeePerGas = maxFeePerGas;
+            uoStruct.maxPriorityFeePerGas = maxPriorityFeePerGas;
+            if (selectedChainConfig.alchemyGasManagerPolicyId) {
+              const requestPaymasterAndDataRes = await requestAlchemy(
+                selectedChainConfig.alchemyChainName,
+                "alchemy_requestPaymasterAndData",
+                [
+                  {
+                    policyId: selectedChainConfig.alchemyGasManagerPolicyId,
+                    entryPoint: entryPointAddress,
+                    userOperation: deepHexlify(uoStruct),
+                  },
+                ],
+              );
+              if (requestPaymasterAndDataRes.error) {
+                throw new Error(requestPaymasterAndDataRes.error.message);
+              }
+              const { paymasterAndData } = requestPaymasterAndDataRes.result;
+              console.log("paymasterAndData", paymasterAndData);
+              uoStruct.paymasterAndData = paymasterAndData;
+            } else {
+              uoStruct.paymasterAndData =
+                selectedChainAddresses.ethDrivePaymaster;
+            }
+            setCurrentStep("wait-for-user-signature");
+            const request =
+              await selectedChainSmartAccountClient.signUserOperation({
+                uoStruct,
+                account: selectedChainSmartAccount,
+              });
+            console.log("request", request);
+            setCurrentStep("sending-user-operation");
+            const requestId =
+              await selectedChainSmartAccountClient.sendRawUserOperation(
+                request,
+                entryPointAddress,
+              );
+            console.log("requestId", requestId);
+            setCurrentStep("wait-for-block-confirmation");
+            const txHash =
+              await selectedChainSmartAccountClient.waitForUserOperationTransaction(
+                {
+                  hash: requestId,
+                  retries: { intervalMs: 5000, multiplier: 1, maxRetries: 100 },
+                },
+              );
+            setCurrentStep("confirmed");
+            console.log("txHash", txHash);
+            setTransactionHash(txHash);
+          } else {
+            console.log("account abstraction is not enabled");
+            await handleTransaction(account, BigInt(0), callData as Hex);
+          }
         }
+      } catch (e) {
+        setError(e.message);
       }
     },
     [
       walletClient,
       selectedDirectory,
+      selectedDirectoryChainId,
       selectedChainConfig,
       selectedChainPublicClient,
       selectedChainAddresses,
-      selectedChainAlchemyChain,
       selectedChainSmartAccount,
       selectedChainSmartAccountClient,
       getFeeEstimateForSmartAccountTransaction,
@@ -229,19 +258,33 @@ export function EthDrive({ path }: { path?: string }) {
       setCurrentStep("");
       setTransactionHash("");
       setError("");
+      setIsTransactionStatusModalOpen(true);
+      setSteps(transactionSteps as any);
       try {
-        console.log("selectedChainAlchemyChain", selectedChainAlchemyChain);
-        console.log("plugins.isAccountKitEnabled", plugins.isAccountKitEnabled);
-        console.log("accountKitClient", accountKitClient);
-        if (plugins.isAccountKitEnabled && accountKitClient) {
-          console.log("using account kit...");
-          const tx = await accountKitClient.sendTransaction({
+        if (!selectedDirectoryChainId) {
+          throw new Error("Selected directory chain id not found");
+        }
+        console.log("selectedDirectoryChainId", selectedDirectoryChainId);
+        if (plugins.isAccountKitEnabled) {
+          console.log("AccountKitEnabled");
+          if (!accountKitClient) {
+            throw new Error("Account kit client not found");
+          }
+          setCurrentStep("checking-network");
+          if (selectedDirectoryChainId !== 11155111) {
+            throw new Error("Account Kit mode only supports Sepolia chain");
+          }
+          setCurrentStep("wait-for-user-signature");
+          setCurrentStep("wait-for-block-confirmation");
+          const txHash = await accountKitClient.sendTransaction({
             to,
             value,
             data: callData,
-            chain: alchemyChains["11155111"],
+            chain: alchemySepoliaChain,
           });
-          console.log("tx", tx);
+          console.log("txHash", txHash);
+          setTransactionHash(txHash);
+          setCurrentStep("confirmed");
         } else {
           if (!publicClient) {
             throw new Error("Public client not found");
@@ -252,14 +295,8 @@ export function EthDrive({ path }: { path?: string }) {
           if (!connectedChainId) {
             throw new Error("Connected chain id not found");
           }
-          if (!selectedDirectoryChainId) {
-            throw new Error("Selected directory chain id not found");
-          }
-          setIsTransactionStatusModalOpen(true);
-          setSteps(transactionSteps as any);
           setCurrentStep("checking-network");
           console.log("connectedChainId", connectedChainId);
-          console.log("selectedDirectoryChainId", selectedDirectoryChainId);
           if (connectedChainId !== selectedDirectoryChainId) {
             console.log("switching chain...");
             setError("Please switch to the directory chain");
@@ -308,18 +345,23 @@ export function EthDrive({ path }: { path?: string }) {
   );
 
   async function handleCreateDirectoryTransaction() {
-    // if (!connectedChainAddresses) {
-    //   throw new Error("Connected chain addresses not found");
-    // }
+    setIsCreateDirectoryModalOpen(false);
+    if (!selectedChainAddresses) {
+      throw new Error("Selected chain addresses not found");
+    }
+    const pathParts = selectedDirectoryPath.split("/");
+    const adjustedPath = pathParts.slice(2).join("/");
+    const finalPath = adjustedPath
+      ? `${adjustedPath}/${createDirectoryName}`
+      : createDirectoryName;
+    console.log("finalPath", finalPath);
     const callData = encodeFunctionData({
       abi: ethDriveAbi,
       functionName: "createDirectory",
-      args: [createDirectoryName],
+      args: [finalPath],
     });
     handleTransaction(
-      "0x178E93a49838D10e46ff6d8999f124965bC4178e",
-      // connectedChainAddresses.ethDrive,
-
+      selectedChainAddresses.ethDrive,
       BigInt(0),
       callData as Hex,
     );
@@ -357,6 +399,7 @@ export function EthDrive({ path }: { path?: string }) {
   return (
     <div className="flex flex-col h-screen">
       <Header
+        isDirectorySelected={selectedDirectory.depth >= 1}
         openCreateDirectoryDialog={() => {
           setIsCreateDirectoryModalOpen(true);
         }}
@@ -489,22 +532,25 @@ export function EthDrive({ path }: { path?: string }) {
                     connectedAddress?.toLowerCase() && (
                     <div>
                       <div className="flex space-x-2 mb-4">
-                        <Button
-                          onClick={() => {
-                            handleDepositETH();
-                          }}
-                        >
-                          Add 0.001 ETH
-                        </Button>
-                        {selectedChainConfig?.isCCIPEnabled && (
+                        {!plugins.isAccountKitEnabled && (
                           <Button
                             onClick={() => {
-                              handleMintMnB();
+                              handleDepositETH();
                             }}
                           >
-                            Add 1 CCIP BnM
+                            Add 0.001 ETH
                           </Button>
                         )}
+                        {!plugins.isAccountKitEnabled &&
+                          selectedChainConfig?.isCCIPEnabled && (
+                            <Button
+                              onClick={() => {
+                                handleMintMnB();
+                              }}
+                            >
+                              Add 1 CCIP BnM
+                            </Button>
+                          )}
                       </div>
                       <div>
                         <Input
@@ -536,6 +582,7 @@ export function EthDrive({ path }: { path?: string }) {
           <DialogHeader>
             <DialogTitle>Create Directory</DialogTitle>
           </DialogHeader>
+          <p className="text-sm">{selectedDirectoryPath}/</p>
           <Input
             placeholder="Enter directory name"
             value={createDirectoryName}
@@ -575,13 +622,13 @@ export function EthDrive({ path }: { path?: string }) {
                 </div>
               ))}
             </div>
-            {transactionHash && (
+            {currentStep == "confirmed" && transactionHash && (
               <div className="mt-4 p-2 bg-blue-100 border border-blue-300 rounded text-blue-700 break-all text-xs">
                 <p className="mb-2">Transaction Detail:</p>
                 <Link
                   href={`${selectedChainConfig?.exproler}/tx/${transactionHash}`}
                 >
-                  {selectedChainConfig?.exproler}/tx/${transactionHash}
+                  {selectedChainConfig?.exproler}/tx/{transactionHash}
                 </Link>
               </div>
             )}

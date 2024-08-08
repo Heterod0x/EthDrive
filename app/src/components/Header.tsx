@@ -10,19 +10,19 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useAccount } from "wagmi";
 
 import { Button } from "@/components/ui/button";
 import { usePlugins } from "@/hooks/usePlugins";
 
 export function Header({
+  isDirectorySelected,
   openCreateDirectoryDialog,
   openSettingsDialog,
 }: {
+  isDirectorySelected: boolean;
   openCreateDirectoryDialog: () => void;
   openSettingsDialog: () => void;
 }) {
-  const { isConnected } = useAccount();
   const signerStatus = useSignerStatus();
   const { openAuthModal } = useAuthModal();
   const user = useUser();
@@ -41,7 +41,7 @@ export function Header({
         <>
           {!plugins.isAccountKitEnabled && (
             <>
-              {isConnected && (
+              {isDirectorySelected && (
                 <Button onClick={openCreateDirectoryDialog}>
                   <Plus className="mr-2 h-4 w-4" /> New
                 </Button>
@@ -61,9 +61,11 @@ export function Header({
                 </button>
               ) : user ? (
                 <>
-                  <Button onClick={openCreateDirectoryDialog}>
-                    <Plus className="mr-2 h-4 w-4" /> New
-                  </Button>
+                  {isDirectorySelected && (
+                    <Button onClick={openCreateDirectoryDialog}>
+                      <Plus className="mr-2 h-4 w-4" /> New
+                    </Button>
+                  )}
                   <button className="btn btn-primary" onClick={() => logout()}>
                     Log out
                   </button>

@@ -1,3 +1,5 @@
+"use client";
+
 import React, {
   ReactNode,
   createContext,
@@ -26,18 +28,35 @@ const PluginsContext = createContext<PluginsContextValue | undefined>(
 export const PluginsProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [plugins, setPlugins] = useState<PluginsState>(() => {
-    // Load the initial state from localStorage if available
-    const savedPlugins = localStorage.getItem("pluginsState");
-    return savedPlugins
-      ? JSON.parse(savedPlugins)
-      : { isAccountKitEnabled: true }; // default state
+  const [plugins, setPlugins] = useState<PluginsState>({
+    isAccountKitEnabled: false, // default state
   });
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
-    // Save the plugins state to localStorage whenever it changes
-    localStorage.setItem("pluginsState", JSON.stringify(plugins));
-  }, [plugins]);
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      const savedPlugins = localStorage.getItem("pluginsState");
+      if (savedPlugins) {
+        setPlugins(JSON.parse(savedPlugins));
+      }
+    }
+  }, [isMounted]);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem("pluginsState", JSON.stringify(plugins));
+    }
+  }, [plugins, isMounted]);
+
+  // Render nothing on the server side (or during the initial client-side hydration)
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <PluginsContext.Provider value={{ plugins, setPlugins }}>

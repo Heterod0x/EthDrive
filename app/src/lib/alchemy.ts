@@ -1,10 +1,9 @@
-import { baseSepolia, optimismSepolia, sepolia } from "@account-kit/infra";
+import { sepolia } from "@account-kit/infra";
 import {
   AlchemyAccountsUIConfig,
   cookieStorage,
   createConfig,
 } from "@account-kit/react";
-import { QueryClient } from "@tanstack/react-query";
 
 import { config } from "../../../contracts/shared/app/config";
 
@@ -52,14 +51,6 @@ export const alchemyConfig = createConfig(
         chain: sepolia,
         policyId: config["11155111"].alchemyGasManagerPolicyId,
       },
-      {
-        chain: optimismSepolia,
-        policyId: config["11155420"].alchemyGasManagerPolicyId,
-      },
-      {
-        chain: baseSepolia,
-        policyId: config["84532"].alchemyGasManagerPolicyId,
-      },
     ],
     ssr: true, // defers hydration of the account state to the client after the initial mount solving any inconsistencies between server and client state (read more here: https://accountkit.alchemy.com/react/ssr)
     storage: cookieStorage, // persist the account state using cookies (read more here: https://accountkit.alchemy.com/react/ssr#persisting-the-account-state)
@@ -67,8 +58,4 @@ export const alchemyConfig = createConfig(
   uiConfig,
 );
 
-export const alchemyChains = {
-  "11155111": sepolia,
-  "11155420": optimismSepolia,
-  "84532": baseSepolia,
-};
+export const alchemySepoliaChain = sepolia;
