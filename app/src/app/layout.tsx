@@ -3,6 +3,8 @@ import { fetchMetadata } from "frames.js/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
+import { baseUrl } from "@/lib/url";
+
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -14,11 +16,6 @@ const metadata: Metadata = {
 };
 
 export async function generateMetadata() {
-  const baseUrl =
-    process.env.NODE_ENV == "production"
-      ? "https://super-eth-drive.vercel.app"
-      : "http://localhost:3000";
-
   return {
     ...metadata,
     other: {
