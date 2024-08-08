@@ -9,7 +9,6 @@ import {
   encodeFunctionData,
   formatEther,
   parseEther,
-  toHex,
 } from "viem";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 
@@ -32,16 +31,9 @@ import { useDragAndDrop } from "@/hooks/useDragAndDrop";
 import { useSmartAccount } from "@/hooks/useSmartAccount";
 import { useTransactionStatus } from "@/hooks/useTransactionStatus";
 import { useWalletConnect } from "@/hooks/useWalletConnect";
-import { dummySignature, request } from "@/lib/alchemy";
 
-import {
-  ethDriveAbi,
-  ethDriveAccountAbi,
-} from "../../../contracts/shared/app/abi";
-import {
-  ccipBnMAbi,
-  entryPointAbi,
-} from "../../../contracts/shared/app/external-abi";
+import { ethDriveAbi } from "../../../contracts/shared/app/abi";
+import { ccipBnMAbi } from "../../../contracts/shared/app/external-abi";
 import { chainlinkCCIPBnMAddresses } from "../../../contracts/shared/external-contract";
 import { entryPointAddress } from "../../../contracts/shared/external-contract";
 import { CopyToClipboard } from "./CopyToClipboard";
@@ -75,8 +67,16 @@ export function EthDrive({ path }: { path?: string }) {
     chainAddresses: selectedChainAddresses,
   } = useChain(selectedDirectoryChainId);
 
-  const { smartAccountClient: selectedChainSmartAccountClient } =
-    useSmartAccount(selectedDirectoryChainId);
+  const {
+    smartAccount: selectedChainSmartAccount,
+    smartAccountClient: selectedChainSmartAccountClient,
+    getFeeEstimateForSmartAccountTransaction,
+  } = useSmartAccount(
+    selectedDirectoryChainId,
+    selectedDirectory.tokenBoundAccount as Address,
+    selectedChainPublicClient,
+    walletClient,
+  );
 
   const {
     transactionSteps,
@@ -103,8 +103,11 @@ export function EthDrive({ path }: { path?: string }) {
       if (!selectedChainPublicClient) {
         throw new Error("Chain public client not found");
       }
+      if (!selectedChainSmartAccount) {
+        throw new Error("Smart account not found");
+      }
       if (!selectedChainSmartAccountClient) {
-        throw new Error("Chain smart account client not found");
+        throw new Error("Smart account client not found");
       }
       if (!selectedChainConfig) {
         throw new Error("Chain config not found");
@@ -117,102 +120,43 @@ export function EthDrive({ path }: { path?: string }) {
       const account = selectedDirectory.tokenBoundAccount as Address;
       console.log("account", account);
       if (selectedChainConfig.isAccountAbstractionEnabled) {
+        console.log("account abstraction is enabled");
         setIsTransactionStatusModalOpen(true);
         setSteps(accountAbstractionSteps as any);
         setCurrentStep("creating-user-operation");
-        console.log("account abstraction is enabled");
-        const nonce = await selectedChainPublicClient.readContract({
-          abi: ethDriveAccountAbi,
-          address: account,
-          functionName: "getNonce",
-          args: [],
-        });
-        console.log("nonce", nonce);
-        const latestBlock = await selectedChainPublicClient.getBlock();
-        console.log("latestBlock", latestBlock);
-        const baseFeePerGas = latestBlock.baseFeePerGas || BigInt(0);
-        console.log("baseFeePerGas", baseFeePerGas);
-        const adjustedBaseFeePerGas = baseFeePerGas + baseFeePerGas / BigInt(4); // add 25% overhead;
-        console.log("adjustedBaseFeePerGas", adjustedBaseFeePerGas);
-        const { result: maxPriorityFeePerGasHex } = await request(
-          "eth-sepolia",
-          "rundler_maxPriorityFeePerGas",
-          [],
-        );
-        const maxPriorityFeePerGas = BigInt(maxPriorityFeePerGasHex);
-        console.log("maxPriorityFeePerGas", maxPriorityFeePerGas);
-        const adjustedMaxPriorityFeePerGas =
-          maxPriorityFeePerGas + maxPriorityFeePerGas / BigInt(4); // add 25% overhead;
-        console.log(
-          "adjustedMaxPriorityFeePerGas",
-          adjustedMaxPriorityFeePerGas,
-        );
-        const maxFeePerGas =
-          adjustedBaseFeePerGas + BigInt(adjustedMaxPriorityFeePerGas);
-        console.log("maxFeePerGas", maxFeePerGas);
-        const partialUserOperation = {
-          sender: account,
-          nonce: toHex(nonce),
-          initCode: "0x",
-          callData: callData,
-          maxFeePerGas: toHex(maxFeePerGas),
-          maxPriorityFeePerGas: toHex(adjustedMaxPriorityFeePerGas),
-          paymasterAndData: selectedChainAddresses.ethDrivePaymaster,
-          signature: dummySignature,
-        };
-        console.log("partialUserOperation", partialUserOperation);
-        const estimateUserOperationGasRes = await request(
-          selectedChainConfig.alchemyChainName,
-          "eth_estimateUserOperationGas",
-          [partialUserOperation, entryPointAddress],
-        );
-        console.log("estimateUserOperationGasRes", estimateUserOperationGasRes);
-        if (estimateUserOperationGasRes.error) {
-          throw new Error(estimateUserOperationGasRes.error);
-        }
-        const { callGasLimit, preVerificationGas, verificationGasLimit } =
-          estimateUserOperationGasRes.result;
-        console.log("callGasLimit", callGasLimit);
-        console.log("preVerificationGas", preVerificationGas);
-        console.log("verificationGasLimit", verificationGasLimit);
-        const userOperation = {
-          ...partialUserOperation,
-          callGasLimit,
-          preVerificationGas,
-          verificationGasLimit,
-        } as any;
-        console.log("userOperation", userOperation);
-        const userOpHash = await selectedChainPublicClient.readContract({
-          abi: entryPointAbi,
-          address: entryPointAddress,
-          functionName: "getUserOpHash",
-          args: [userOperation],
-        });
-        console.log("userOpHash", userOpHash);
+        const _uoStruct =
+          await selectedChainSmartAccountClient.buildUserOperation({
+            uo: callData,
+            account: selectedChainSmartAccount,
+          });
+        const uoStruct = _uoStruct as any;
+        console.log("uoStruct", uoStruct);
+        const { maxFeePerGas, maxPriorityFeePerGas } =
+          await getFeeEstimateForSmartAccountTransaction();
+        uoStruct.maxFeePerGas = maxFeePerGas;
+        uoStruct.maxPriorityFeePerGas = maxPriorityFeePerGas;
+        uoStruct.paymasterAndData = selectedChainAddresses.ethDrivePaymaster;
         setCurrentStep("wait-for-user-signature");
-        const signature = await walletClient.signMessage({
-          message: { raw: userOpHash },
-        });
-        console.log("signature", signature);
-        userOperation.signature = signature;
-        console.log("userOperation", userOperation);
-        setCurrentStep("sending-user-operation");
-        const sendUserOperationRes = await request(
-          selectedChainConfig.alchemyChainName,
-          "eth_sendUserOperation",
-          [userOperation, entryPointAddress],
+        const request = await selectedChainSmartAccountClient.signUserOperation(
+          {
+            uoStruct,
+            account: selectedChainSmartAccount,
+          },
         );
-        console.log("sendUserOperationRes", sendUserOperationRes);
-        if (sendUserOperationRes.error) {
-          throw new Error(sendUserOperationRes.error);
-        }
-        const requestId = sendUserOperationRes.result;
+        console.log("request", request);
+        setCurrentStep("sending-user-operation");
+        const requestId =
+          await selectedChainSmartAccountClient.sendRawUserOperation(
+            request,
+            entryPointAddress,
+          );
         console.log("requestId", requestId);
         setCurrentStep("wait-for-block-confirmation");
         const txHash =
           await selectedChainSmartAccountClient.waitForUserOperationTransaction(
             {
               hash: requestId,
+              retries: { intervalMs: 5000, multiplier: 1, maxRetries: 100 },
             },
           );
         setCurrentStep("confirmed");
@@ -224,11 +168,14 @@ export function EthDrive({ path }: { path?: string }) {
       }
     },
     [
+      walletClient,
       selectedDirectory,
       selectedChainConfig,
       selectedChainPublicClient,
       selectedChainAddresses,
-      walletClient,
+      selectedChainSmartAccount,
+      selectedChainSmartAccountClient,
+      getFeeEstimateForSmartAccountTransaction,
     ],
   );
 
