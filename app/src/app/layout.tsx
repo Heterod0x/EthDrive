@@ -1,8 +1,11 @@
+import { cookieToInitialState } from "@account-kit/core";
 import "@rainbow-me/rainbowkit/styles.css";
 import { fetchMetadata } from "frames.js/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { headers } from "next/headers";
 
+import { alchemyConfig } from "@/lib/alchemy";
 import { baseUrl } from "@/lib/url";
 
 import "./globals.css";
@@ -29,10 +32,15 @@ export default function Layout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialState = cookieToInitialState(
+    alchemyConfig,
+    headers().get("cookie") ?? undefined,
+  );
+
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers initialState={initialState}>{children}</Providers>
       </body>
     </html>
   );

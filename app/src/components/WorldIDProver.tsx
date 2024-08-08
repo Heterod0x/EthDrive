@@ -2,7 +2,9 @@
 
 import { IDKitWidget, VerificationLevel } from "@worldcoin/idkit";
 import { useRef } from "react";
+
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const appId = process.env.NEXT_PUBLIC_WORLD_ID_APP_ID as `app_${string}`;
 const action = process.env.NEXT_PUBLIC_WORLD_ID_ACTION!;
@@ -70,6 +72,15 @@ export const WorldIDProver = ({
               open();
             }}
           />
+          <Label className="mt-1 ml-1" htmlFor="enable_world_id">
+            {verifying && <>{"Verifying..."}</>}
+            {!verifying && (
+              <>
+                {checked ? "Disable Gassless" : "Enable Gasless"}
+                {!skipVerification && " (World ID verification required)"}
+              </>
+            )}
+          </Label>
         </div>
       )}
     </IDKitWidget>
