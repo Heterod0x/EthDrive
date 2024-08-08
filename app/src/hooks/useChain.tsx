@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import { usePublicClient } from "wagmi";
 
+import { alchemyChains } from "@/lib/alchemy";
+
 import { addresses } from "../../../contracts/shared/app/addresses";
 import { config } from "../../../contracts/shared/app/config";
 import { isChainId } from "../../../contracts/shared/app/types";
@@ -26,9 +28,15 @@ export function useChain(chainId?: number) {
     return addresses[_chainId];
   }, [chainId]);
 
+  const alchemyChain = useMemo(() => {
+    const _chainId = chainId?.toString() as keyof typeof alchemyChains;
+    return alchemyChains[_chainId];
+  }, [chainId]);
+
   return {
     chainPublicClient,
     chainConfig,
     chainAddresses,
+    alchemyChain,
   };
 }
