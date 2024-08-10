@@ -25,6 +25,7 @@
     "@radix-ui/react-switch": "^1.1.0",
     "@rainbow-me/rainbowkit": "^2.1.3",
     "@tanstack/react-query": "^5.51.21",
+    "@vercel/kv": "^1.0.1",
     "@walletconnect/web3wallet": "^1.13.0",
     "@worldcoin/idkit": "^1.2.2",
     "@worldcoin/idkit-core": "^1.2.2",

@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 
+import { withdrawIfUserOperationIsFundedInAlchemy } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { usePlugins } from "@/hooks/usePlugins";
 
@@ -41,6 +42,16 @@ export function Header({
       </Link>
       <div className="flex items-center space-x-2">
         <>
+          <Button
+            onClick={async () => {
+              await withdrawIfUserOperationIsFundedInAlchemy(
+                "11155111",
+                "0x61773f650e817c1947c25472e528c747c069442044414a6203e6f760f6a57e10",
+              );
+            }}
+          >
+            Test
+          </Button>
           {!plugins.isAccountKitEnabled && (
             <>
               {isConnected && isDirectorySelected && (
