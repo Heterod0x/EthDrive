@@ -4,7 +4,7 @@ import { writeContract } from "@wagmi/core";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { switchChain } from "@wagmi/core";
 import { ethers } from "ethers";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAccount, useConfig, useReadContract } from "wagmi";
 
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ export function DepositManagerPlugin() {
   const { address } = useAccount();
   const config = useConfig();
 
-  console.log('debug::address', address);
+  console.log("debug::address", address);
 
   const [isGasslessEnabled, setIsGasslessEnabled] = useIsGasslessEnabled();
 
