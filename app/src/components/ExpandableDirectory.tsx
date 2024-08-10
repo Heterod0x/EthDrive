@@ -1,9 +1,6 @@
-"use client";
-
-import "@rainbow-me/rainbowkit";
 import { ChevronDown, ChevronRight, Folder } from "lucide-react";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 
 import { Directory } from "@/types/directory";
 
@@ -11,25 +8,15 @@ export function ExpandableDirectory({
   directory,
   onSelected,
   onFileDrop,
-  selectedDirectory,
 }: {
   directory: Directory;
   onSelected: (path: string) => void;
   onFileDrop: (directoryPath: string) => void;
-  selectedDirectory: Directory;
 }) {
   const [isExpanded, setIsExpanded] = useState(
     directory.isExpandedByDefault || false,
   );
-
-  useEffect(() => {
-    if (
-      selectedDirectory &&
-      selectedDirectory.path.startsWith(directory.path)
-    ) {
-      setIsExpanded(true);
-    }
-  }, [selectedDirectory, directory.path]);
+  const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleExpandClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -44,11 +31,29 @@ export function ExpandableDirectory({
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    if (!isExpanded && directory.subdirectories.length > 0) {
+      if (expandTimeoutRef.current === null) {
+        expandTimeoutRef.current = setTimeout(() => {
+          setIsExpanded(true);
+        }, 1000); // Expand after 1 second of hovering
+      }
+    }
+  };
+
+  const handleDragLeave = () => {
+    if (expandTimeoutRef.current) {
+      clearTimeout(expandTimeoutRef.current);
+      expandTimeoutRef.current = null;
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if (expandTimeoutRef.current) {
+      clearTimeout(expandTimeoutRef.current);
+      expandTimeoutRef.current = null;
+    }
     onFileDrop(directory.path);
   };
 
@@ -61,6 +66,7 @@ export function ExpandableDirectory({
         className="flex items-center py-2 cursor-pointer hover:bg-gray-100 rounded"
         onClick={handleDirectoryClick}
         onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         style={{ paddingLeft: `${paddingLeft}px` }}
       >
@@ -75,50 +81,50 @@ export function ExpandableDirectory({
         ) : (
           <span className="w-4 h-4 mr-2" />
         )}
-        {directory.depth == 0 && (
+        {directory.depth === 0 && (
           <Image
             src="/logo.png"
             alt="logo"
-            width="16"
-            height="16"
+            width={16}
+            height={16}
             className="mr-2"
           />
         )}
-        {directory.depth == 1 && (
+        {directory.depth === 1 && (
           <>
-            {directory.path == "root/tenderly-virtual-testnet" && (
+            {directory.path === "root/tenderly-virtual-testnet" && (
               <Image
                 src="/logo-tenderly.svg"
                 alt="logo-tenderly"
-                width="16"
-                height="16"
+                width={16}
+                height={16}
                 className="mr-2"
               />
             )}
-            {directory.path == "root/sepolia" && (
+            {directory.path === "root/sepolia" && (
               <Image
                 src="/logo-ethereum.svg"
                 alt="logo-ethereum"
-                width="16"
-                height="16"
+                width={16}
+                height={16}
                 className="mr-2"
               />
             )}
-            {directory.path == "root/optimism-sepolia" && (
+            {directory.path === "root/optimism-sepolia" && (
               <Image
                 src="/logo-optimism.svg"
                 alt="logo-optimism"
-                width="16"
-                height="16"
+                width={16}
+                height={16}
                 className="mr-2"
               />
             )}
-            {directory.path == "root/base-sepolia" && (
+            {directory.path === "root/base-sepolia" && (
               <Image
                 src="/logo-base.svg"
                 alt="logo-base"
-                width="16"
-                height="16"
+                width={16}
+                height={16}
                 className="mr-2"
               />
             )}
@@ -142,7 +148,6 @@ export function ExpandableDirectory({
                 directory={subdirectory}
                 onSelected={onSelected}
                 onFileDrop={onFileDrop}
-                selectedDirectory={selectedDirectory}
               />
             ))}
         </div>
