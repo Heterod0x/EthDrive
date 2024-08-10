@@ -10,7 +10,7 @@ import {
 export const virtualChain = defineChain({
   id: ethDriveVirtualMainnetChainId,
   name: "Tenderly Virtual",
-  iconUrl: "/logo-tenderly.svg",
+  iconUrl: "/logo-tenderly-virtual-testnet.svg",
   nativeCurrency: {
     decimals: 18,
     name: "Virtual Ether",

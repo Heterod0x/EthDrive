@@ -22,7 +22,7 @@ import {
 
 export function useDragAndDrop(
   rootDirectory: Directory,
-  handleTransactionAsDirectory: (callData: Hex) => void,
+  handleTransactionAsDirectory: (callData: Hex, path: string) => void,
 ) {
   useEffect(() => {
     enableDragDropTouch();
@@ -160,7 +160,7 @@ export function useDragAndDrop(
             });
           }
         }
-        handleTransactionAsDirectory(callData as Hex);
+        handleTransactionAsDirectory(callData as Hex, directoryPath);
         setDraggedFile(null);
       }
     },

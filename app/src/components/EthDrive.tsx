@@ -130,130 +130,146 @@ export function EthDrive({ path }: { path?: string }) {
 
   const [actualTransction, setActualTransaction] = useState<any>();
   const [transactionType, setTransactionType] = useState<
-    "create" | "add-eth" | "add-ccip" | "transfer"
+    "create" | "add-eth" | "add-ccip" | "move"
   >("create");
 
+  const [destinationPath, setDestinationPath] = useState("");
+
   const handleTransactionAsDirectory = useCallback(
-    async (callData: Hex) => {
-      setTransactionStatusModalMode("progress");
-      setCurrentStep("");
-      setTransactionHash("");
-      setError("");
-      setSteps(accountAbstractionSteps as any);
-      try {
-        if (!walletClient) {
-          throw new Error("Wallet client not found");
-        }
-        if (!selectedChainPublicClient) {
-          throw new Error("Chain public client not found");
-        }
-        if (!selectedChainConfig) {
-          throw new Error("Chain config not found");
-        }
-        if (!selectedChainAddresses) {
-          throw new Error("Chain addresses not found");
-        }
-        console.log("handleTransactionAsDirectory");
-        const account = selectedDirectory.tokenBoundAccount as Address;
-        console.log("account", account);
-        console.log("callData", callData);
-        if (plugins.isAccountKitEnabled) {
-          if (!accountKitClient) {
-            throw new Error("Account kit client not found");
+    async (callData: Hex, destinationPath?: string) => {
+      if (destinationPath) {
+        setDestinationPath(destinationPath);
+      }
+
+      setTransactionStatusModalMode("preview");
+      setTransactionType("move");
+      setIsTransactionStatusModalOpen(true);
+      const actualTx = async () => {
+        setTransactionStatusModalMode("progress");
+        setCurrentStep("");
+        setTransactionHash("");
+        setError("");
+        setSteps(accountAbstractionSteps as any);
+        try {
+          if (!walletClient) {
+            throw new Error("Wallet client not found");
           }
-          if (selectedDirectoryChainId !== 11155111) {
-            throw new Error("Account Kit mode only supports Sepolia chain");
+          if (!selectedChainPublicClient) {
+            throw new Error("Chain public client not found");
           }
-          console.log("AccountKitEnabled");
-          setCurrentStep("creating-user-operation");
-          setCurrentStep("wait-for-user-signature");
-          setCurrentStep("sending-user-operation");
-          setCurrentStep("wait-for-block-confirmation");
-          const txHash = await accountKitClient.sendTransaction({
-            to: account,
-            data: callData,
-            chain: alchemySepoliaChain,
-          });
-          console.log("txHash", txHash);
-          setTransactionHash(txHash);
-          setCurrentStep("confirmed");
-        } else {
-          if (selectedChainConfig.isAccountAbstractionEnabled) {
-            console.log("account abstraction is enabled");
-            if (!selectedChainSmartAccount) {
-              throw new Error("Smart account not found");
+          if (!selectedChainConfig) {
+            throw new Error("Chain config not found");
+          }
+          if (!selectedChainAddresses) {
+            throw new Error("Chain addresses not found");
+          }
+          console.log("handleTransactionAsDirectory");
+          const account = selectedDirectory.tokenBoundAccount as Address;
+          console.log("account", account);
+          console.log("callData", callData);
+          if (plugins.isAccountKitEnabled) {
+            if (!accountKitClient) {
+              throw new Error("Account kit client not found");
             }
-            if (!selectedChainSmartAccountClient) {
-              throw new Error("Smart account client not found");
+            if (selectedDirectoryChainId !== 11155111) {
+              throw new Error("Account Kit mode only supports Sepolia chain");
             }
+            console.log("AccountKitEnabled");
             setCurrentStep("creating-user-operation");
-            const _uoStruct =
-              await selectedChainSmartAccountClient.buildUserOperation({
-                uo: callData,
-                account: selectedChainSmartAccount,
-              });
-            const uoStruct = _uoStruct as any;
-            console.log("uoStruct", uoStruct);
-            console.log("custom fee estimation");
-            const { maxFeePerGas, maxPriorityFeePerGas } =
-              await getFeeEstimateForSmartAccountTransaction();
-            uoStruct.maxFeePerGas = maxFeePerGas;
-            uoStruct.maxPriorityFeePerGas = maxPriorityFeePerGas;
-            if (selectedChainConfig.alchemyGasManagerPolicyId) {
-              const requestPaymasterAndDataRes = await requestAlchemy(
-                selectedChainConfig.alchemyChainName,
-                "alchemy_requestPaymasterAndData",
-                [
-                  {
-                    policyId: selectedChainConfig.alchemyGasManagerPolicyId,
-                    entryPoint: entryPointAddress,
-                    userOperation: deepHexlify(uoStruct),
-                  },
-                ],
-              );
-              if (requestPaymasterAndDataRes.error) {
-                throw new Error(requestPaymasterAndDataRes.error.message);
-              }
-              const { paymasterAndData } = requestPaymasterAndDataRes.result;
-              console.log("paymasterAndData", paymasterAndData);
-              uoStruct.paymasterAndData = paymasterAndData;
-            } else {
-              uoStruct.paymasterAndData =
-                selectedChainAddresses.ethDrivePaymaster;
-            }
             setCurrentStep("wait-for-user-signature");
-            const request =
-              await selectedChainSmartAccountClient.signUserOperation({
-                uoStruct,
-                account: selectedChainSmartAccount,
-              });
-            console.log("request", request);
             setCurrentStep("sending-user-operation");
-            const requestId =
-              await selectedChainSmartAccountClient.sendRawUserOperation(
-                request,
-                entryPointAddress,
-              );
-            console.log("requestId", requestId);
             setCurrentStep("wait-for-block-confirmation");
-            const txHash =
-              await selectedChainSmartAccountClient.waitForUserOperationTransaction(
-                {
-                  hash: requestId,
-                  retries: { intervalMs: 5000, multiplier: 1, maxRetries: 100 },
-                },
-              );
-            setCurrentStep("confirmed");
+            const txHash = await accountKitClient.sendTransaction({
+              to: account,
+              data: callData,
+              chain: alchemySepoliaChain,
+            });
             console.log("txHash", txHash);
             setTransactionHash(txHash);
+            setCurrentStep("confirmed");
           } else {
-            console.log("account abstraction is not enabled");
-            await handleTransaction(account, BigInt(0), callData as Hex);
+            if (selectedChainConfig.isAccountAbstractionEnabled) {
+              console.log("account abstraction is enabled");
+              if (!selectedChainSmartAccount) {
+                throw new Error("Smart account not found");
+              }
+              if (!selectedChainSmartAccountClient) {
+                throw new Error("Smart account client not found");
+              }
+              setCurrentStep("creating-user-operation");
+              const _uoStruct =
+                await selectedChainSmartAccountClient.buildUserOperation({
+                  uo: callData,
+                  account: selectedChainSmartAccount,
+                });
+              const uoStruct = _uoStruct as any;
+              console.log("uoStruct", uoStruct);
+              console.log("custom fee estimation");
+              const { maxFeePerGas, maxPriorityFeePerGas } =
+                await getFeeEstimateForSmartAccountTransaction();
+              uoStruct.maxFeePerGas = maxFeePerGas;
+              uoStruct.maxPriorityFeePerGas = maxPriorityFeePerGas;
+              if (selectedChainConfig.alchemyGasManagerPolicyId) {
+                const requestPaymasterAndDataRes = await requestAlchemy(
+                  selectedChainConfig.alchemyChainName,
+                  "alchemy_requestPaymasterAndData",
+                  [
+                    {
+                      policyId: selectedChainConfig.alchemyGasManagerPolicyId,
+                      entryPoint: entryPointAddress,
+                      userOperation: deepHexlify(uoStruct),
+                    },
+                  ],
+                );
+                if (requestPaymasterAndDataRes.error) {
+                  throw new Error(requestPaymasterAndDataRes.error.message);
+                }
+                const { paymasterAndData } = requestPaymasterAndDataRes.result;
+                console.log("paymasterAndData", paymasterAndData);
+                uoStruct.paymasterAndData = paymasterAndData;
+              } else {
+                uoStruct.paymasterAndData =
+                  selectedChainAddresses.ethDrivePaymaster;
+              }
+              setCurrentStep("wait-for-user-signature");
+              const request =
+                await selectedChainSmartAccountClient.signUserOperation({
+                  uoStruct,
+                  account: selectedChainSmartAccount,
+                });
+              console.log("request", request);
+              setCurrentStep("sending-user-operation");
+              const requestId =
+                await selectedChainSmartAccountClient.sendRawUserOperation(
+                  request,
+                  entryPointAddress,
+                );
+              console.log("requestId", requestId);
+              setCurrentStep("wait-for-block-confirmation");
+              const txHash =
+                await selectedChainSmartAccountClient.waitForUserOperationTransaction(
+                  {
+                    hash: requestId,
+                    retries: {
+                      intervalMs: 5000,
+                      multiplier: 1,
+                      maxRetries: 100,
+                    },
+                  },
+                );
+              setCurrentStep("confirmed");
+              console.log("txHash", txHash);
+              setTransactionHash(txHash);
+            } else {
+              console.log("account abstraction is not enabled");
+              await handleTransaction(account, BigInt(0), callData as Hex);
+            }
           }
+        } catch (e: any) {
+          setError(e.message);
         }
-      } catch (e: any) {
-        setError(e.message);
-      }
+      };
+      setActualTransaction(() => actualTx);
     },
     [
       walletClient,
@@ -574,7 +590,7 @@ export function EthDrive({ path }: { path?: string }) {
                 ).map((directory) => (
                   <Card
                     key={directory.path}
-                    className="relative flex items-center p-6 cursor-pointer w-full mb-2"
+                    className="relative flex items-center p-4 cursor-pointer w-full mb-2"
                     onClick={() => {
                       setSelectedDirectoryPath(directory.path);
                     }}
@@ -585,8 +601,8 @@ export function EthDrive({ path }: { path?: string }) {
                       <>
                         {directory.path == "root/tenderly-virtual-testnet" && (
                           <Image
-                            src="/logo-tenderly.svg"
-                            alt="logo-tenderly"
+                            src="/logo-tenderly-virtual-testnet.svg"
+                            alt="logo-tenderly-virtual-testnet"
                             width="24"
                             height="24"
                             className="mr-3"
@@ -594,8 +610,8 @@ export function EthDrive({ path }: { path?: string }) {
                         )}
                         {directory.path == "root/sepolia" && (
                           <Image
-                            src="/logo-ethereum.svg"
-                            alt="logo-ethereum"
+                            src="/logo-sepolia.svg"
+                            alt="logo-sepolia"
                             width="24"
                             height="24"
                             className="mr-3"
@@ -603,8 +619,8 @@ export function EthDrive({ path }: { path?: string }) {
                         )}
                         {directory.path == "root/optimism-sepolia" && (
                           <Image
-                            src="/logo-optimism.svg"
-                            alt="logo-optimism"
+                            src="/logo-optimism-sepolia.svg"
+                            alt="logo-optimism-sepolia"
                             width="24"
                             height="24"
                             className="mr-3"
@@ -612,8 +628,8 @@ export function EthDrive({ path }: { path?: string }) {
                         )}
                         {directory.path == "root/base-sepolia" && (
                           <Image
-                            src="/logo-base.svg"
-                            alt="logo-base"
+                            src="/logo-base-sepolia.svg"
+                            alt="logo-base-sepolia"
                             width="24"
                             height="24"
                             className="mr-3"
@@ -625,7 +641,7 @@ export function EthDrive({ path }: { path?: string }) {
                       <Folder className="h-6 w-6 mr-3" />
                     )}
                     <span>{directory.name}</span>
-                    <span className="absolute bottom-1 right-3 text-xs text-gray-400 truncate w-40 md:w-80 text-right">
+                    <span className="absolute bottom-1 right-3 text-xs text-gray-400 truncate w-24 md:w-80 text-right">
                       {directory.tokenBoundAccount}
                     </span>
                   </Card>
@@ -638,7 +654,7 @@ export function EthDrive({ path }: { path?: string }) {
                 {selectedDirectory.files.map((file, i) => (
                   <Card
                     key={`files_${i}`}
-                    className="flex items-center justify-between p-6 cursor-pointer w-full cursor-move relative"
+                    className="flex items-center justify-between p-4 cursor-pointer w-full cursor-move relative"
                     draggable
                     onDragStart={handleDragStart(file)}
                   >
@@ -668,7 +684,7 @@ export function EthDrive({ path }: { path?: string }) {
                       <p className="font-semibold mb-2">
                         WalletConnect with Directory
                       </p>
-                      <Card className="mb-8 p-6">
+                      <Card className="mb-8 p-4">
                         {!proposerName && (
                           <>
                             <Input
@@ -715,7 +731,7 @@ export function EthDrive({ path }: { path?: string }) {
                           </>
                         )}
                       </Card>
-                      <div className="bg-gray-100 p-6 rounded">
+                      <div className="bg-gray-100 p-4 rounded">
                         <p className="mb-2 font-semibold text-sm">
                           Tester Actions
                         </p>
@@ -816,6 +832,35 @@ export function EthDrive({ path }: { path?: string }) {
                     </p>
                   </>
                 )}
+                {transactionType == "move" && (
+                  <>
+                    <p className="text-gray-600 font-medium">Move File</p>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-gray-800 mt-2 text-sm">
+                          From: {selectedDirectoryPath}
+                        </p>
+                        <Image
+                          src={`/logo-${selectedDirectoryPath.split("/")[1]}.svg`}
+                          alt="target-chain"
+                          width="20"
+                          height="20"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-gray-800 mt-2 text-sm">
+                          To: {destinationPath}
+                        </p>
+                        <Image
+                          src={`/logo-${destinationPath.split("/")[1]}.svg`}
+                          alt="target-chain"
+                          width="20"
+                          height="20"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
               <DialogFooter>
                 <Button
@@ -866,6 +911,35 @@ export function EthDrive({ path }: { path?: string }) {
                     </p>
                   </>
                 )}
+                {transactionType == "move" && (
+                  <>
+                    <p className="text-gray-600 font-medium">Move File</p>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-gray-800 mt-2 text-sm">
+                          From: {selectedDirectoryPath}
+                        </p>
+                        <Image
+                          src={`/logo-${selectedDirectoryPath.split("/")[1]}.svg`}
+                          alt="target-chain"
+                          width="20"
+                          height="20"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-gray-800 mt-2 text-sm">
+                          To: {destinationPath}
+                        </p>
+                        <Image
+                          src={`/logo-${destinationPath.split("/")[1]}.svg`}
+                          alt="target-chain"
+                          width="20"
+                          height="20"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
               <div>
                 <div className="space-y-4">
@@ -892,6 +966,20 @@ export function EthDrive({ path }: { path?: string }) {
                     >
                       {selectedChainConfig?.exproler}/tx/{transactionHash}
                     </Link>
+                    {destinationPath &&
+                      selectedDirectoryPath.split("/")[1] !==
+                        destinationPath.split("/")[1] && (
+                        <div className="mt-4">
+                          <p className="mb-2">CCIP Bridge Detail:</p>
+                          <Link
+                            className="underline"
+                            href={`https://ccip.chain.link/tx/${transactionHash}`}
+                            target="_blank"
+                          >
+                            https://ccip.chain.link/tx/{transactionHash}
+                          </Link>
+                        </div>
+                      )}
                   </div>
                 )}
                 {error && (
