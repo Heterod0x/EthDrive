@@ -10,9 +10,10 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Address } from "viem";
 import { useAccount } from "wagmi";
 
-import { withdrawIfUserOperationIsFundedInAlchemy } from "@/app/actions";
+import { updateAlchemyGasManagerWhiteList } from "@/app/actions/integrate-alchemy-and-eth-drive-chain";
 import { Button } from "@/components/ui/button";
 import { usePlugins } from "@/hooks/usePlugins";
 
@@ -25,7 +26,7 @@ export function Header({
   openCreateDirectoryDialog: () => void;
   openSettingsDialog?: () => void;
 }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const signerStatus = useSignerStatus();
   const { openAuthModal } = useAuthModal();
   const user = useUser();
@@ -44,9 +45,10 @@ export function Header({
         <>
           <Button
             onClick={async () => {
-              await withdrawIfUserOperationIsFundedInAlchemy(
+              await updateAlchemyGasManagerWhiteList(
                 "11155111",
-                "0x61773f650e817c1947c25472e528c747c069442044414a6203e6f760f6a57e10",
+                "0xd90d539deb1af0c5400ab9c389acaf040753f5cc",
+                "0",
               );
             }}
           >
