@@ -8,14 +8,8 @@ import { deepHexlify } from "@alchemy/aa-core";
 import { File, Folder, GripVertical, PanelLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { usePathname } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Address,
   Hex,
@@ -64,7 +58,6 @@ import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 
 export function EthDrive({ path }: { path?: string }) {
-  const router = useRouter();
   const pathname = usePathname();
 
   const { plugins, setPlugins } = usePlugins();
@@ -267,7 +260,12 @@ export function EthDrive({ path }: { path?: string }) {
               }
             } else {
               console.log("account abstraction is not enabled");
-              await handleTransaction(account, BigInt(0), callData as Hex);
+              await handleTransaction(
+                account,
+                BigInt(0),
+                callData as Hex,
+                callback,
+              );
             }
           }
         } catch (e: any) {
@@ -290,7 +288,7 @@ export function EthDrive({ path }: { path?: string }) {
   );
 
   const handleTransaction = useCallback(
-    async (to: Address, value = BigInt(0), callData: Hex) => {
+    async (to: Address, value = BigInt(0), callData: Hex, callback?: any) => {
       console.log("handleTransaction");
       setTransactionStatusModalMode("progress");
       setCurrentStep("");
@@ -322,6 +320,9 @@ export function EthDrive({ path }: { path?: string }) {
           console.log("txHash", txHash);
           setTransactionHash(txHash);
           setCurrentStep("confirmed");
+          if (callback) {
+            callback(txHash);
+          }
         } else {
           if (!publicClient) {
             throw new Error("Public client not found");
@@ -357,6 +358,9 @@ export function EthDrive({ path }: { path?: string }) {
             });
             console.log("receipt", receipt);
             setCurrentStep("confirmed");
+            if (callback) {
+              callback(txHash);
+            }
           }
         }
       } catch (error: any) {
