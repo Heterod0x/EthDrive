@@ -35,7 +35,7 @@ export function Header({
     <header className="flex items-center justify-between p-4 border-b">
       <Link href="/">
         <div className="flex items-center space-x-2">
-          <Image src="/logo.png" alt="logo" width="32" height="32" />
+          <Image src="/logo.png" alt="logo" width="16" height="16" />
           <h1 className="hidden lg:block text-2xl font-semibold">EthDrive</h1>
         </div>
       </Link>

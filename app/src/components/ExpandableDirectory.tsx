@@ -1,6 +1,8 @@
 "use client";
 
+import "@rainbow-me/rainbowkit";
 import { ChevronDown, ChevronRight, Folder } from "lucide-react";
+import Image from "next/image";
 import React, { useState } from "react";
 
 import { Directory } from "@/types/directory";
@@ -62,7 +64,56 @@ export function ExpandableDirectory({
         ) : (
           <span className="w-4 h-4 mr-2" />
         )}
-        <Folder className="w-4 h-4 mr-2" />
+        {directory.depth == 0 && (
+          <Image
+            src="/logo.png"
+            alt="logo"
+            width="16"
+            height="16"
+            className="mr-2"
+          />
+        )}
+        {directory.depth == 1 && (
+          <>
+            {directory.path == "root/tenderly-virtual-testnet" && (
+              <Image
+                src="/logo-tenderly.svg"
+                alt="logo"
+                width="16"
+                height="16"
+                className="mr-2"
+              />
+            )}
+            {directory.path == "root/sepolia" && (
+              <Image
+                src="/logo-ethereum.svg"
+                alt="logo"
+                width="16"
+                height="16"
+                className="mr-2"
+              />
+            )}
+            {directory.path == "root/optimism-sepolia" && (
+              <Image
+                src="/logo-optimism.svg"
+                alt="logo"
+                width="16"
+                height="16"
+                className="mr-2"
+              />
+            )}
+            {directory.path == "root/base-sepolia" && (
+              <Image
+                src="/logo-base.svg"
+                alt="logo"
+                width="16"
+                height="16"
+                className="mr-2"
+              />
+            )}
+          </>
+        )}
+        {directory.depth >= 2 && <Folder className="w-4 h-4 mr-2" />}
         <span
           className="text-base font-medium truncate"
           style={{ maxWidth: `${nameMaxWidth}px` }}
