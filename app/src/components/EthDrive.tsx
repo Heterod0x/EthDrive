@@ -456,7 +456,7 @@ export function EthDrive({ path }: { path?: string }) {
           </div>
           {selectedDirectoryPath == selectedDirectory.path && (
             <div>
-              <div className="pl-4 mb-8 space-y-2">
+              <div className="mb-8 space-y-2">
                 {selectedDirectory.tokenBoundAccount && (
                   <div className="flex items-center">
                     <p className="text-sm">
@@ -470,6 +470,17 @@ export function EthDrive({ path }: { path?: string }) {
                   </div>
                 )}
               </div>
+              {selectedDirectory.holder && (
+                <div className="mb-8">
+                  <p className="font-bold mb-2">Owners</p>
+                  <div className="flex items-center">
+                    <p className="text-sm">
+                      {checksumAddress(selectedDirectory.holder as Address)}
+                    </p>
+                    <CopyToClipboard text={selectedDirectory.holder} />
+                  </div>
+                </div>
+              )}
               {selectedDirectory.subdirectories.length > 0 && (
                 <p className="font-bold mb-2">Directories</p>
               )}
@@ -588,7 +599,6 @@ export function EthDrive({ path }: { path?: string }) {
                               onChange={(e) => setUri(e.target.value)}
                             />
                             <Button
-                              size="sm"
                               className="w-full"
                               disabled={!uri}
                               onClick={() => {
@@ -616,7 +626,6 @@ export function EthDrive({ path }: { path?: string }) {
                               {proposerUrl}
                             </Link>
                             <Button
-                              size="sm"
                               className="w-full mt-4"
                               onClick={() => {
                                 refreshWalletConnect();
