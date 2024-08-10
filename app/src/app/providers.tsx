@@ -5,19 +5,37 @@ import { AlchemyAccountProvider } from "@account-kit/react";
 import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { QueryClient } from "@tanstack/react-query";
-import { baseSepolia, optimismSepolia, sepolia } from "viem/chains";
+import {
+  baseSepolia,
+  celoAlfajores,
+  fraxtal,
+  metalL2,
+  modeTestnet,
+  optimismSepolia,
+  sepolia,
+} from "viem/chains";
 import { WagmiProvider } from "wagmi";
 
 import { PluginsProvider } from "@/hooks/usePlugins";
 import { alchemyConfig } from "@/lib/alchemy";
-import { virtualChain, conduitChain } from "@/lib/chain";
+import { conduitChain, virtualChain } from "@/lib/chain";
 
 export const wagmiConfig = getDefaultConfig({
   appName: "ETHDrive",
   projectId:
     process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ||
     "3a8170812b534d0ff9d794f19a901d64",
-  chains: [virtualChain, sepolia, optimismSepolia, baseSepolia, conduitChain],
+  chains: [
+    virtualChain,
+    sepolia,
+    optimismSepolia,
+    baseSepolia,
+    modeTestnet,
+    celoAlfajores,
+    metalL2,
+    fraxtal,
+    conduitChain,
+  ],
   ssr: true,
 });
 

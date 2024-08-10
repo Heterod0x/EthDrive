@@ -7,11 +7,11 @@ import {
   useUser,
 } from "@account-kit/react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { ethers } from "ethers";
 import { Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAccount } from "wagmi";
+
 import { Button } from "@/components/ui/button";
 import { usePlugins } from "@/hooks/usePlugins";
 
@@ -35,20 +35,15 @@ export function Header({
     <header className="flex items-center justify-between p-4 border-b">
       <Link href="/">
         <div className="flex items-center space-x-2">
-          <Image src="/logo.png" alt="logo" width="32" height="32" />
+          <Image src="/logo.png" alt="logo" width="16" height="16" />
           <h1 className="hidden lg:block text-2xl font-semibold">EthDrive</h1>
         </div>
       </Link>
       <div className="flex items-center space-x-2">
-        {isConnected && (
-          <Button onClick={openCreateDirectoryDialog}>
-            <Plus className="mr-2 h-4 w-4" /> New
-          </Button>
-        )}
         <>
           {!plugins.isAccountKitEnabled && (
             <>
-              {isDirectorySelected && (
+              {isConnected && isDirectorySelected && (
                 <Button onClick={openCreateDirectoryDialog}>
                   <Plus className="mr-2 h-4 w-4" /> New
                 </Button>
