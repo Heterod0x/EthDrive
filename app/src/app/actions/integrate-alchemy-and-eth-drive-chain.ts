@@ -169,6 +169,7 @@ export const withdrawIfUserOperationIsFundedInAlchemy = async (
     body: JSON.stringify({
       account: signer,
       fee: feeBn.toString(),
+      // TODO: add currency here for USD (eth/usd)
     }),
   });
   const data = await response.json();
