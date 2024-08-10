@@ -5,7 +5,7 @@ import {
   useSmartAccountClient,
 } from "@account-kit/react";
 import { deepHexlify } from "@alchemy/aa-core";
-import { File, Folder, PanelLeft } from "lucide-react";
+import { File, Folder, GripVertical, PanelLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useCallback, useMemo, useState } from "react";
@@ -580,12 +580,13 @@ export function EthDrive({ path }: { path?: string }) {
               )}
               <div className="mb-8 space-y-2">
                 {selectedDirectory.files.map((file, i) => (
-                  <React.Fragment key={`files_${i}`}>
-                    <Card
-                      className="flex items-center p-4 cursor-pointer w-full"
-                      draggable
-                      onDragStart={handleDragStart(file)}
-                    >
+                  <Card
+                    key={`files_${i}`}
+                    className="flex items-center justify-between p-4 cursor-pointer w-full cursor-move"
+                    draggable
+                    onDragStart={handleDragStart(file)}
+                  >
+                    <div className="flex items-center">
                       <File className="h-6 w-6 mr-2" />
                       {file.type == "native" && (
                         <span>{formatEther(BigInt(file.amount))} ETH</span>
@@ -596,8 +597,12 @@ export function EthDrive({ path }: { path?: string }) {
                       {file.type == "ccip" && (
                         <span>{formatEther(BigInt(file.amount))} BnM</span>
                       )}
-                    </Card>
-                  </React.Fragment>
+                    </div>
+                    <div>
+                      {" "}
+                      <GripVertical className="h-5 w-5 text-gray-400" />
+                    </div>
+                  </Card>
                 ))}
               </div>
               <div>
