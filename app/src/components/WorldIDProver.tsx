@@ -74,12 +74,7 @@ export const WorldIDProver = ({
           />
           <Label htmlFor="enable_world_id">
             {verifying && <>{"Verifying..."}</>}
-            {!verifying && (
-              <>
-                Enable Cross-chain Gas Subsidiary
-                {!skipVerification && " with World ID"}
-              </>
-            )}
+            {!verifying && <>Enable Cross-chain Gas Subsidiary with World ID</>}
           </Label>
         </div>
       )}

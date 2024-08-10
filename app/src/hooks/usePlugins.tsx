@@ -11,6 +11,7 @@ import React, {
 // Define the shape of the plugins state
 interface PluginsState {
   isAccountKitEnabled: boolean;
+  isCrosschainGasSubsidiaryEnabled: boolean;
 }
 
 // Define the shape of the context value
@@ -30,6 +31,7 @@ export const PluginsProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [plugins, setPlugins] = useState<PluginsState>({
     isAccountKitEnabled: false, // default state
+    isCrosschainGasSubsidiaryEnabled: false,
   });
 
   const [isMounted, setIsMounted] = useState(false);

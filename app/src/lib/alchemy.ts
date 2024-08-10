@@ -14,11 +14,17 @@ export function getRpcUrl(network: string) {
   return `https://${network}.g.alchemy.com/v2/${alchemyKey}`;
 }
 
-export async function request(network: string, method: string, params: any) {
+export async function request(
+  network: string,
+  method: string,
+  params: any,
+  accessToken?: string,
+) {
   const res = await fetch(getRpcUrl(network), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: accessToken ? `Bearer ${accessToken}` : "",
     },
     body: JSON.stringify({
       id: 1,

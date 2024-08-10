@@ -24,7 +24,7 @@ export function Header({
   openCreateDirectoryDialog: () => void;
   openSettingsDialog?: () => void;
 }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const signerStatus = useSignerStatus();
   const { openAuthModal } = useAuthModal();
   const user = useUser();
@@ -68,14 +68,12 @@ export function Header({
                       <Plus className="mr-2 h-4 w-4" /> New
                     </Button>
                   )}
-                  <button className="btn btn-primary" onClick={() => logout()}>
+                  <Button variant={"secondary"} onClick={() => logout()}>
                     Log out
-                  </button>
+                  </Button>
                 </>
               ) : (
-                <button className="btn btn-primary" onClick={openAuthModal}>
-                  Login
-                </button>
+                <Button onClick={openAuthModal}>Login</Button>
               )}
             </>
           )}

@@ -9,7 +9,7 @@ import { useAccount, useConfig, useReadContract } from "wagmi";
 
 import { Button } from "@/components/ui/button";
 import GasDepositManagerABI from "@/constants/abis/GasDepositManager.json";
-import { useIsGasslessEnabled } from "@/hooks/useIsGaslessEnabled";
+import { usePlugins } from "@/hooks/usePlugins";
 import { conduitChain } from "@/lib/chain";
 
 import { WorldIDProver } from "./WorldIDProver";
@@ -34,7 +34,7 @@ export function DepositManagerPlugin() {
 
   console.log("debug::address", address);
 
-  const [isGasslessEnabled, setIsGasslessEnabled] = useIsGasslessEnabled();
+  const { plugins, setPlugins } = usePlugins();
 
   const { data: rawIsWorldIdVerified, refetch: refetchIsWorldIdVerified } =
     useReadContract({
@@ -101,7 +101,10 @@ export function DepositManagerPlugin() {
         console.log("debug::receipt", receipt);
 
         refetchIsWorldIdVerified();
-        setIsGasslessEnabled(true);
+        setPlugins((prev) => ({
+          ...prev,
+          isCrosschainGasSubsidiaryEnabled: true,
+        }));
       } catch (error) {
         console.error(error);
       } finally {
@@ -113,8 +116,10 @@ export function DepositManagerPlugin() {
 
   const onGaslessSwitchToggled = useCallback((nextChecked: boolean) => {
     console.log("debug::onGaslessSwitchToggled", nextChecked);
-
-    setIsGasslessEnabled(nextChecked);
+    setPlugins((prev) => ({
+      ...prev,
+      isCrosschainGasSubsidiaryEnabled: nextChecked,
+    }));
   }, []);
 
   const [newDepositAmount, setNewDepositAmount] = useState("");
@@ -124,7 +129,7 @@ export function DepositManagerPlugin() {
     return Number.isNaN(parsed) || parsed < 0;
   }, [newDepositAmount]);
   const onClickDeposit = useCallback(async () => {
-    if (!isWorldIdVerified || !isGasslessEnabled) return;
+    if (!isWorldIdVerified || !plugins.isCrosschainGasSubsidiaryEnabled) return;
 
     try {
       setIsDepositing(true);
@@ -162,7 +167,7 @@ export function DepositManagerPlugin() {
     newDepositAmount,
     config,
     isWorldIdVerified,
-    isGasslessEnabled,
+    plugins.isCrosschainGasSubsidiaryEnabled,
     refetchDepositAmount,
   ]);
 
@@ -170,7 +175,7 @@ export function DepositManagerPlugin() {
     <div className="pt-4 space-y-2">
       <WorldIDProver
         disabled={!address || verifying}
-        checked={isWorldIdVerified && isGasslessEnabled}
+        checked={plugins.isCrosschainGasSubsidiaryEnabled}
         skipVerification={isWorldIdVerified!}
         verifying={verifying}
         address={address!}
@@ -178,7 +183,7 @@ export function DepositManagerPlugin() {
         onSwitchToggled={onGaslessSwitchToggled}
       />
       <div className="flex flex-col space-y-2">
-        {isWorldIdVerified && isGasslessEnabled && (
+        {plugins.isCrosschainGasSubsidiaryEnabled && (
           <>
             <p className="mt-4 font-medium">
               Cross-chain Gas Subsidiary Dashboard

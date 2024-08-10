@@ -5,6 +5,7 @@ import {
   useSmartAccountClient,
 } from "@account-kit/react";
 import { deepHexlify } from "@alchemy/aa-core";
+import { from } from "@apollo/client";
 import { File, Folder, GripVertical, PanelLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,6 +26,10 @@ import {
   useWalletClient,
 } from "wagmi";
 
+import {
+  updateAlchemyGasManagerWhiteList,
+  withdrawIfUserOperationIsFundedInAlchemy,
+} from "@/app/actions/integrate-alchemy-and-eth-drive-chain";
 import { ExpandableDirectory } from "@/components/ExpandableDirectory";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -49,6 +54,7 @@ import { alchemySepoliaChain, request as requestAlchemy } from "@/lib/alchemy";
 
 import { ethDriveAbi } from "../../../contracts/shared/app/abi";
 import { ccipBnMAbi } from "../../../contracts/shared/app/external-abi";
+import { ChainId } from "../../../contracts/shared/app/types";
 import { chainlinkCCIPBnMAddresses } from "../../../contracts/shared/external-contract";
 import { entryPointAddress } from "../../../contracts/shared/external-contract";
 import { CopyToClipboard } from "./CopyToClipboard";
@@ -204,7 +210,51 @@ export function EthDrive({ path }: { path?: string }) {
                 await getFeeEstimateForSmartAccountTransaction();
               uoStruct.maxFeePerGas = maxFeePerGas;
               uoStruct.maxPriorityFeePerGas = maxPriorityFeePerGas;
-              if (selectedChainConfig.alchemyGasManagerPolicyId) {
+              console.log(
+                "selectedChainConfig.alchemyGasManagerPolicyIdWithWithdraw",
+                selectedChainConfig.alchemyGasManagerPolicyIdWithWithdraw,
+              );
+              console.log(
+                "plugins.isCrosschainGasSubsidiaryEnabled",
+                plugins.isCrosschainGasSubsidiaryEnabled,
+              );
+              if (
+                selectedChainConfig.alchemyGasManagerPolicyIdWithWithdraw &&
+                plugins.isCrosschainGasSubsidiaryEnabled
+              ) {
+                //  make calc simpler for now
+                const gasMaxPrice = fromHex(uoStruct.maxFeePerGas, "bigint");
+                // + fromHex(uoStruct.maxPriorityFeePerGas, "bigint");
+                const gasAmount =
+                  // fromHex(uoStruct.preVerificationGas, "bigint") +
+                  // fromHex(uoStruct.verificationGasLimit, "bigint") +
+                  fromHex(uoStruct.callGasLimit, "bigint");
+                const requiredFee = gasMaxPrice * gasAmount;
+                console.log("requiredFee", requiredFee);
+                await updateAlchemyGasManagerWhiteList(
+                  selectedDirectoryChainId?.toString() as ChainId,
+                  selectedDirectory.tokenBoundAccount as Address,
+                  requiredFee.toString(),
+                );
+                const requestPaymasterAndDataRes = await requestAlchemy(
+                  selectedChainConfig.alchemyChainName,
+                  "alchemy_requestPaymasterAndData",
+                  [
+                    {
+                      policyId:
+                        selectedChainConfig.alchemyGasManagerPolicyIdWithWithdraw,
+                      entryPoint: entryPointAddress,
+                      userOperation: deepHexlify(uoStruct),
+                    },
+                  ],
+                );
+                if (requestPaymasterAndDataRes.error) {
+                  throw new Error(requestPaymasterAndDataRes.error.message);
+                }
+                const { paymasterAndData } = requestPaymasterAndDataRes.result;
+                console.log("paymasterAndData", paymasterAndData);
+                uoStruct.paymasterAndData = paymasterAndData;
+              } else if (selectedChainConfig.alchemyGasManagerPolicyId) {
                 const requestPaymasterAndDataRes = await requestAlchemy(
                   selectedChainConfig.alchemyChainName,
                   "alchemy_requestPaymasterAndData",
@@ -222,9 +272,6 @@ export function EthDrive({ path }: { path?: string }) {
                 const { paymasterAndData } = requestPaymasterAndDataRes.result;
                 console.log("paymasterAndData", paymasterAndData);
                 uoStruct.paymasterAndData = paymasterAndData;
-              } else {
-                uoStruct.paymasterAndData =
-                  selectedChainAddresses.ethDrivePaymaster;
               }
               setCurrentStep("wait-for-user-signature");
               const request =
@@ -257,6 +304,41 @@ export function EthDrive({ path }: { path?: string }) {
               setTransactionHash(txHash);
               if (callback) {
                 callback(txHash);
+              }
+              if (
+                selectedChainConfig.alchemyGasManagerPolicyIdWithWithdraw &&
+                plugins.isCrosschainGasSubsidiaryEnabled
+              ) {
+                console.log(
+                  "set up sync balance with EthDrive gas subsidiary chain",
+                );
+                const maxRetries = 10;
+                let retryCount = 0;
+                const attemptWithdraw = async () => {
+                  try {
+                    console.log(
+                      "sync balance with EthDrive gas subsidiary chain...",
+                    );
+                    await withdrawIfUserOperationIsFundedInAlchemy(
+                      selectedDirectoryChainId?.toString() as ChainId,
+                      requestId,
+                    );
+                    console.log("sync completed!!");
+                  } catch (e: any) {
+                    retryCount++;
+                    if (
+                      e.message === "Already processed" ||
+                      retryCount >= maxRetries
+                    ) {
+                      console.log("Process completed or max retries reached.");
+                    } else {
+                      console.log("Withdraw failed: ", e.message);
+                      console.log(`Retrying... (${retryCount}/${maxRetries})`);
+                      setTimeout(attemptWithdraw, 5000); // Wait for 1 second before retrying
+                    }
+                  }
+                };
+                attemptWithdraw();
               }
             } else {
               console.log("account abstraction is not enabled");
