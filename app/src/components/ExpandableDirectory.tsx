@@ -39,6 +39,9 @@ export function ExpandableDirectory({
     onFileDrop(directory.path);
   };
 
+  const paddingLeft = directory.depth * 25;
+  const nameMaxWidth = 175 - paddingLeft;
+
   return (
     <div>
       <div
@@ -46,7 +49,7 @@ export function ExpandableDirectory({
         onClick={handleDirectoryClick}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        style={{ paddingLeft: `${directory.depth * 25}px` }}
+        style={{ paddingLeft: `${paddingLeft}px` }}
       >
         {directory.subdirectories.length > 0 ? (
           <span onClick={handleExpandClick}>
@@ -60,7 +63,12 @@ export function ExpandableDirectory({
           <span className="w-4 h-4 mr-2" />
         )}
         <Folder className="w-4 h-4 mr-2" />
-        <span className="text-base font-medium">{directory.name}</span>
+        <span
+          className="text-base font-medium truncate"
+          style={{ maxWidth: `${nameMaxWidth}px` }}
+        >
+          {directory.name}
+        </span>
       </div>
       {directory.subdirectories.length > 0 && isExpanded && (
         <div>
