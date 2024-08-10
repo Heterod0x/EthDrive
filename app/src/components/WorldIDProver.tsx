@@ -3,8 +3,8 @@
 import { IDKitWidget, VerificationLevel } from "@worldcoin/idkit";
 import { useRef } from "react";
 
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 const appId = process.env.NEXT_PUBLIC_WORLD_ID_APP_ID as `app_${string}`;
 const action = process.env.NEXT_PUBLIC_WORLD_ID_ACTION!;
@@ -50,7 +50,7 @@ export const WorldIDProver = ({
       verification_level={VerificationLevel.Orb}
       app_id={appId}
       action={action}
-      signal={address.substring(2)}
+      signal={address ? address.substring(2) : ""}
       handleVerify={verifyProof}
       onSuccess={onSuccess}
     >
