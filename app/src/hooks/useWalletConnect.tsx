@@ -13,16 +13,47 @@ import { ethDriveAccountAbi } from "../../../contracts/shared/app/abi";
 
 export function useWalletConnect(
   selectedDirectory: Directory,
-  handleTransactionAsDirectory: (callData: Hex) => void,
+  handleTransactionAsDirectory: (
+    callData: Hex,
+    destinationPath?: string,
+    callback?: any,
+  ) => void,
 ) {
   const [web3wallet, setWeb3Wallet] = useState<any>();
   const [uri, setUri] = useState("");
-  const [name, setName] = useState("");
+  const [proposerName, setProposerName] = useState("");
+  const [proposerUrl, setProposerUrl] = useState("");
+  const [proposerIcon, setProposerIcon] = useState("");
+  const [to, setTo] = useState("");
+  const [value, setValue] = useState("");
+  const [data, setData] = useState("");
   const [topic, setTopic] = useState("");
   const sessionEstablished = useRef(false);
 
-  useEffect(() => {
-    if (!selectedDirectory || !selectedDirectory.tokenBoundAccount || topic) {
+  const init = () => {
+    if (sessionEstablished.current && web3wallet && topic) {
+      console.log("walletConnect: disconnect");
+      try {
+        web3wallet.disconnectSession({
+          topic,
+          reason: getSdkError("USER_DISCONNECTED"),
+        });
+      } catch (error) {
+        console.log("walletConnect: error", error);
+      }
+      setWeb3Wallet(undefined);
+      setUri("");
+      setTopic("");
+      setProposerName("");
+      setProposerUrl("");
+      setProposerIcon("");
+      setTo("");
+      setValue("");
+      setData("");
+      sessionEstablished.current = false;
+    }
+
+    if (!selectedDirectory || !selectedDirectory.tokenBoundAccount) {
       return;
     }
 
@@ -72,6 +103,9 @@ export function useWalletConnect(
               namespaces: approvedNamespaces,
             });
             console.log("walletConnect: session approved", topic);
+            setProposerName(params.proposer.metadata.name);
+            setProposerUrl(params.proposer.metadata.url);
+            setProposerIcon(params.proposer.metadata.icons[0]);
             setTopic(topic);
             sessionEstablished.current = true; // Mark session as established
           } catch (error) {
@@ -84,7 +118,6 @@ export function useWalletConnect(
         },
       );
       console.log("walletConnect: setEthSendTransaction");
-      web3wallet;
       web3wallet.on(
         "session_request",
         async (event: Web3WalletTypes.SessionRequest) => {
@@ -97,37 +130,46 @@ export function useWalletConnect(
           console.log("to", to);
           console.log("value", value);
           console.log("data", data);
+          setTo(to);
+          setValue(value);
+          setData(data);
           const callData = encodeFunctionData({
             abi: ethDriveAccountAbi,
             functionName: "execute",
             args: [to, value ? fromHex(value, "bigint") : BigInt(0), data],
           });
           console.log("callData", callData);
-          const hash = await handleTransactionAsDirectory(callData);
-          const response = { id, result: hash, jsonrpc: "2.0" };
-          await web3wallet.respondSessionRequest({ topic, response });
+          await handleTransactionAsDirectory(
+            callData,
+            "",
+            async (hash: string) => {
+              const response = { id, result: hash, jsonrpc: "2.0" };
+              await web3wallet.respondSessionRequest({ topic, response });
+            },
+          );
         },
       );
     })();
-    return () => {
-      if (sessionEstablished.current && web3wallet && topic) {
-        console.log("walletConnect: disconnect");
-        try {
-          web3wallet.disconnectSession({
-            topic,
-            reason: getSdkError("USER_DISCONNECTED"),
-          });
-        } catch (error) {
-          console.log("walletConnect: error", error);
-        }
-        setWeb3Wallet(undefined);
-        setUri("");
-        setTopic("");
-        setName("");
-        sessionEstablished.current = false;
-      }
-    };
-  }, [selectedDirectory, topic]);
+  };
 
-  return { web3wallet, uri, name, setUri };
+  useEffect(() => {
+    init();
+  }, [selectedDirectory]);
+
+  const refresh = () => {
+    init();
+  };
+
+  return {
+    web3wallet,
+    uri,
+    setUri,
+    proposerName,
+    proposerUrl,
+    proposerIcon,
+    to,
+    value,
+    data,
+    refresh,
+  };
 }

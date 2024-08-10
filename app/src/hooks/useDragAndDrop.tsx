@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Address, Hex, encodeFunctionData } from "viem";
 
 import { getChainIdFromPath } from "@/lib/chain";
 import { findDirectory } from "@/lib/directory";
+import { enableDragDropTouch } from "@/lib/drag-drop-touch.esm";
 import { Directory } from "@/types/directory";
 import { File as FileType } from "@/types/file";
 
@@ -21,8 +22,12 @@ import {
 
 export function useDragAndDrop(
   rootDirectory: Directory,
-  handleTransactionAsDirectory: (callData: Hex) => void,
+  handleTransactionAsDirectory: (callData: Hex, path: string) => void,
 ) {
+  useEffect(() => {
+    enableDragDropTouch();
+  }, []);
+
   const [draggedFile, setDraggedFile] = useState<FileType | null>(null);
 
   const handleDragStart =
@@ -155,7 +160,7 @@ export function useDragAndDrop(
             });
           }
         }
-        handleTransactionAsDirectory(callData as Hex);
+        handleTransactionAsDirectory(callData as Hex, directoryPath);
         setDraggedFile(null);
       }
     },

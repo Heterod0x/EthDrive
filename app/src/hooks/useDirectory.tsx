@@ -71,6 +71,34 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
         depth: 1,
         files: [],
       },
+      {
+        path: "root/mode-testnet",
+        name: "mode-testnet",
+        subdirectories: [],
+        depth: 1,
+        files: [],
+      },
+      {
+        path: "root/celo-alfajores",
+        name: "celo-alfajores",
+        subdirectories: [],
+        depth: 1,
+        files: [],
+      },
+      {
+        path: "root/metal-l2-mainnet",
+        name: "metal-l2-mainnet",
+        subdirectories: [],
+        depth: 1,
+        files: [],
+      },
+      {
+        path: "root/fraxtal-mainnet",
+        name: "fraxtal-mainnet",
+        subdirectories: [],
+        depth: 1,
+        files: [],
+      },
     ],
     files: [],
     depth: 0,
@@ -116,10 +144,11 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
           chainDir.path === "root/sepolia"
             ? {
                 ...chainDir,
-                subdirectories:
-                  dataSepolia.directories.map((subDir: Directory) =>
-                    adjustDirectoryDepth(subDir, 2, "root/sepolia"),
-                  ) || [],
+                subdirectories: dataSepolia
+                  ? dataSepolia.directories.map((subDir: Directory) =>
+                      adjustDirectoryDepth(subDir, 2, "root/sepolia"),
+                    )
+                  : [],
               }
             : chainDir,
         ),
@@ -135,10 +164,11 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
           chainDir.path === "root/optimism-sepolia"
             ? {
                 ...chainDir,
-                subdirectories:
-                  dataOptimismSepolia.directories.map((subDir: Directory) =>
-                    adjustDirectoryDepth(subDir, 2, "root/optimism-sepolia"),
-                  ) || [],
+                subdirectories: dataOptimismSepolia
+                  ? dataOptimismSepolia.directories.map((subDir: Directory) =>
+                      adjustDirectoryDepth(subDir, 2, "root/optimism-sepolia"),
+                    )
+                  : [],
               }
             : chainDir,
         ),
@@ -154,10 +184,11 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
           chainDir.path === "root/base-sepolia"
             ? {
                 ...chainDir,
-                subdirectories:
-                  dataBaseSepolia.directories.map((subDir: Directory) =>
-                    adjustDirectoryDepth(subDir, 2, "root/base-sepolia"),
-                  ) || [],
+                subdirectories: dataBaseSepolia
+                  ? dataBaseSepolia.directories.map((subDir: Directory) =>
+                      adjustDirectoryDepth(subDir, 2, "root/base-sepolia"),
+                    )
+                  : [],
               }
             : chainDir,
         ),
