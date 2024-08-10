@@ -116,10 +116,11 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
           chainDir.path === "root/sepolia"
             ? {
                 ...chainDir,
-                subdirectories:
-                  dataSepolia.directories.map((subDir: Directory) =>
-                    adjustDirectoryDepth(subDir, 2, "root/sepolia"),
-                  ) || [],
+                subdirectories: dataSepolia
+                  ? dataSepolia.directories.map((subDir: Directory) =>
+                      adjustDirectoryDepth(subDir, 2, "root/sepolia"),
+                    )
+                  : [],
               }
             : chainDir,
         ),
@@ -135,10 +136,11 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
           chainDir.path === "root/optimism-sepolia"
             ? {
                 ...chainDir,
-                subdirectories:
-                  dataOptimismSepolia.directories.map((subDir: Directory) =>
-                    adjustDirectoryDepth(subDir, 2, "root/optimism-sepolia"),
-                  ) || [],
+                subdirectories: dataOptimismSepolia
+                  ? dataOptimismSepolia.directories.map((subDir: Directory) =>
+                      adjustDirectoryDepth(subDir, 2, "root/optimism-sepolia"),
+                    )
+                  : [],
               }
             : chainDir,
         ),
@@ -154,10 +156,11 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
           chainDir.path === "root/base-sepolia"
             ? {
                 ...chainDir,
-                subdirectories:
-                  dataBaseSepolia.directories.map((subDir: Directory) =>
-                    adjustDirectoryDepth(subDir, 2, "root/base-sepolia"),
-                  ) || [],
+                subdirectories: dataBaseSepolia
+                  ? dataBaseSepolia.directories.map((subDir: Directory) =>
+                      adjustDirectoryDepth(subDir, 2, "root/base-sepolia"),
+                    )
+                  : [],
               }
             : chainDir,
         ),

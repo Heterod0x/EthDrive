@@ -5,7 +5,7 @@ import {
   useSmartAccountClient,
 } from "@account-kit/react";
 import { deepHexlify } from "@alchemy/aa-core";
-import { File, Folder } from "lucide-react";
+import { File, Folder, PanelLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useCallback, useMemo, useState } from "react";
@@ -402,6 +402,12 @@ export function EthDrive({ path }: { path?: string }) {
     useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <Header
@@ -414,7 +420,7 @@ export function EthDrive({ path }: { path?: string }) {
         }}
       />
       <div className="flex flex-grow">
-        <Sidebar>
+        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar}>
           <div>
             <p className="font-bold mb-2">All Directories</p>
             <ExpandableDirectory
@@ -443,6 +449,17 @@ export function EthDrive({ path }: { path?: string }) {
           )}
         </Sidebar>
         <div className="p-4 w-full">
+          <button
+            onClick={toggleSidebar}
+            className={`md:hidden mb-2 p-2 text-gray-600 hover:text-gray-800 focus:outline-none transition-transform duration-500 ease-in-out`}
+            style={{
+              transform: isSidebarOpen
+                ? "translateX(15rem) rotate(0deg)"
+                : "translateX(0) rotate(180deg)",
+            }}
+          >
+            <PanelLeft size={24} />
+          </button>
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center">
               <DirectoryPathBreadcrumb
@@ -461,7 +478,7 @@ export function EthDrive({ path }: { path?: string }) {
               <div className="mb-8 space-y-2">
                 {selectedDirectory.tokenBoundAccount && (
                   <div className="flex items-center">
-                    <p className="text-sm">
+                    <p className="text-xs">
                       {checksumAddress(
                         selectedDirectory.tokenBoundAccount as Address,
                       )}
@@ -476,7 +493,7 @@ export function EthDrive({ path }: { path?: string }) {
                 <div className="mb-8">
                   <p className="font-bold mb-2">Owners</p>
                   <div className="flex items-center">
-                    <p className="text-sm">
+                    <p className="text-xs">
                       {checksumAddress(selectedDirectory.holder as Address)}
                     </p>
                     <CopyToClipboard text={selectedDirectory.holder} />
