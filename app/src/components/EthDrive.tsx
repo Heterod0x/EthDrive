@@ -8,7 +8,14 @@ import { deepHexlify } from "@alchemy/aa-core";
 import { File, Folder, GripVertical, PanelLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Address,
   Hex,
@@ -56,6 +63,9 @@ import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 
 export function EthDrive({ path }: { path?: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const { plugins, setPlugins } = usePlugins();
   const {
     isConnected,
@@ -407,6 +417,20 @@ export function EthDrive({ path }: { path?: string }) {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  useEffect(() => {
+    if (pathname !== `/${selectedDirectoryPath}`) {
+      window.history.pushState(null, "", `/${selectedDirectoryPath}`);
+    }
+  }, [selectedDirectoryPath]);
+
+  useEffect(() => {
+    if (pathname !== `/${selectedDirectoryPath}`) {
+      console.log("pathname", pathname);
+      console.log("selectedDirectoryPath", selectedDirectoryPath);
+      setSelectedDirectoryPath(pathname.slice(1));
+    }
+  }, [pathname]);
 
   return (
     <div className="flex flex-col h-screen">
