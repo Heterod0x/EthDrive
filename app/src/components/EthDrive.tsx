@@ -689,9 +689,16 @@ export function EthDrive({ path }: { path?: string }) {
                   selectedDirectory.holder?.toLowerCase() ==
                     connectedAddress?.toLowerCase() && (
                     <div>
-                      <p className="font-semibold mb-2">
-                        WalletConnect with Directory
-                      </p>
+                      <div className="mb-2">
+                        <p className="font-semibold">
+                          WalletConnect with Directory
+                        </p>
+                        {selectedDirectoryChainId !== 11155111 && (
+                          <p className="text-xs text-red-400">
+                            * Only activated for Sepolia now.
+                          </p>
+                        )}
+                      </div>
                       <Card className="mb-8 p-4">
                         {!proposerName && (
                           <>
@@ -700,10 +707,13 @@ export function EthDrive({ path }: { path?: string }) {
                               placeholder="wc:"
                               className="mb-2"
                               onChange={(e) => setUri(e.target.value)}
+                              disabled={selectedDirectoryChainId !== 11155111}
                             />
                             <Button
                               className="w-full"
-                              disabled={!uri}
+                              disabled={
+                                selectedDirectoryChainId !== 11155111 || !uri
+                              }
                               onClick={() => {
                                 web3wallet.pair({ uri });
                               }}
