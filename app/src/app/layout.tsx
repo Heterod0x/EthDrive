@@ -4,6 +4,7 @@ import { fetchMetadata } from "frames.js/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { headers } from "next/headers";
+import Script from "next/script";
 
 import { alchemyConfig } from "@/lib/alchemy";
 import { baseUrl } from "@/lib/url";

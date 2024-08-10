@@ -451,6 +451,11 @@ export function EthDrive({ path }: { path?: string }) {
         <div className="p-4 w-full">
           <button
             onClick={toggleSidebar}
+            onDragOver={() => {
+              if (!isSidebarOpen) {
+                toggleSidebar();
+              }
+            }}
             className={`md:hidden mb-2 p-2 text-gray-600 hover:text-gray-800 focus:outline-none transition-transform duration-500 ease-in-out`}
             style={{
               transform: isSidebarOpen
