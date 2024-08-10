@@ -42,7 +42,7 @@ export function ExpandableDirectory({
   return (
     <div>
       <div
-        className="flex items-center py-1 cursor-pointer hover:bg-gray-100 rounded"
+        className="flex items-center py-2 cursor-pointer hover:bg-gray-100 rounded"
         onClick={handleDirectoryClick}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
@@ -51,27 +51,29 @@ export function ExpandableDirectory({
         {directory.subdirectories.length > 0 ? (
           <span onClick={handleExpandClick}>
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 mr-1" />
+              <ChevronDown className="w-4 h-4 mr-2" />
             ) : (
-              <ChevronRight className="w-4 h-4 mr-1" />
+              <ChevronRight className="w-4 h-4 mr-2" />
             )}
           </span>
         ) : (
-          <span className="w-4 h-4 mr-1" />
+          <span className="w-4 h-4 mr-2" />
         )}
         <Folder className="w-4 h-4 mr-2" />
-        <span className="text-sm">{directory.name}</span>
+        <span className="text-base font-medium">{directory.name}</span>
       </div>
       {directory.subdirectories.length > 0 && isExpanded && (
         <div>
-          {directory.subdirectories.map((subdirectory) => (
-            <ExpandableDirectory
-              key={subdirectory.path}
-              directory={subdirectory}
-              onSelected={onSelected}
-              onFileDrop={onFileDrop}
-            />
-          ))}
+          {directory.subdirectories
+            .filter((dir) => dir.name)
+            .map((subdirectory) => (
+              <ExpandableDirectory
+                key={subdirectory.path}
+                directory={subdirectory}
+                onSelected={onSelected}
+                onFileDrop={onFileDrop}
+              />
+            ))}
         </div>
       )}
     </div>

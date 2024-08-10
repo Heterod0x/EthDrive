@@ -48,10 +48,10 @@ import { ccipBnMAbi } from "../../../contracts/shared/app/external-abi";
 import { chainlinkCCIPBnMAddresses } from "../../../contracts/shared/external-contract";
 import { entryPointAddress } from "../../../contracts/shared/external-contract";
 import { CopyToClipboard } from "./CopyToClipboard";
+import { DepositManagerPlugin } from "./DepositManagerPlugin";
 import { DirectoryPathBreadcrumb } from "./DirectoryPathBreadcrumb";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
-import { DepositManagerPlugin } from "./DepositManagerPlugin";
 
 export function EthDrive({ path }: { path?: string }) {
   const { plugins, setPlugins } = usePlugins();
@@ -409,7 +409,7 @@ export function EthDrive({ path }: { path?: string }) {
       <div className="flex flex-grow">
         <Sidebar>
           <div>
-            <p className="font-medium mb-2">All Directories</p>
+            <p className="font-bold mb-2">All Directories</p>
             <ExpandableDirectory
               directory={rootDirectory}
               onSelected={(path) => {
@@ -421,7 +421,7 @@ export function EthDrive({ path }: { path?: string }) {
           </div>
           {isConnected && (
             <div>
-              <p className="font-medium mb-2">My Directories</p>
+              <p className="font-bold mb-2">My Directories</p>
               <ExpandableDirectory
                 directory={connectedAddressDirectory}
                 onSelected={(path) => {
