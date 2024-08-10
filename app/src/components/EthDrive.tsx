@@ -484,6 +484,26 @@ export function EthDrive({ path }: { path?: string }) {
     }
   }, [pathname]);
 
+  const [owners, setOwners] = useState([""]); // Start with one empty owner input
+
+  // Handle the change of an owner's input
+  const handleOwnerChange = (index: number, value: string) => {
+    const updatedOwners = [...owners];
+    updatedOwners[index] = value;
+    setOwners(updatedOwners);
+  };
+
+  // Add a new owner input
+  const addOwner = () => {
+    setOwners([...owners, ""]);
+  };
+
+  // Remove an owner input
+  const removeOwner = (index: number) => {
+    const updatedOwners = owners.filter((_, i) => i !== index);
+    setOwners(updatedOwners);
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <Header
@@ -698,7 +718,7 @@ export function EthDrive({ path }: { path?: string }) {
                           WalletConnect with Directory
                         </p>
                         {selectedDirectoryChainId !== 11155111 && (
-                          <p className="text-xs text-red-400">
+                          <p className="mt-1 text-xs text-red-400">
                             * Only activated for Sepolia now.
                           </p>
                         )}
@@ -796,12 +816,51 @@ export function EthDrive({ path }: { path?: string }) {
           <DialogHeader>
             <DialogTitle>Create Directory</DialogTitle>
           </DialogHeader>
-          <p className="text-sm">{selectedDirectoryPath}/</p>
+          <label className="block text-sm font-medium text-gray-700 mt-4">
+            {selectedDirectoryPath}/
+          </label>
           <Input
             placeholder="Enter directory name"
             value={createDirectoryName}
             onChange={(e) => setCreateDirectoryName(e.target.value)}
           />
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700">
+              Add Additional owners with EAS
+            </label>
+            {selectedDirectoryChainId !== 11155111 && (
+              <p className="mt-1 text-xs text-red-400">
+                * Only activated for Sepolia now.
+              </p>
+            )}
+            {owners.map((owner, index) => (
+              <div key={index} className="flex items-center mt-2">
+                <Input
+                  placeholder="Enter owner's name or email"
+                  value={owner}
+                  onChange={(e) => handleOwnerChange(index, e.target.value)}
+                  className="mr-2"
+                  disabled={selectedDirectoryChainId !== 11155111}
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => removeOwner(index)}
+                  disabled={selectedDirectoryChainId !== 11155111}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+            <Button
+              variant="outline"
+              onClick={addOwner}
+              className="mt-2"
+              disabled={selectedDirectoryChainId !== 11155111}
+            >
+              + Add Owner
+            </Button>
+          </div>
+
           <DialogFooter>
             <Button
               variant="outline"
