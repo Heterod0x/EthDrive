@@ -55,7 +55,7 @@ export const WorldIDProver = ({
       onSuccess={onSuccess}
     >
       {({ open }) => (
-        <div className="flex items-cente space-x-2">
+        <div className="flex items-center space-x-4">
           <Switch
             checked={checked}
             disabled={disabled}
@@ -72,12 +72,12 @@ export const WorldIDProver = ({
               open();
             }}
           />
-          <Label className="mt-1 ml-1" htmlFor="enable_world_id">
+          <Label htmlFor="enable_world_id">
             {verifying && <>{"Verifying..."}</>}
             {!verifying && (
               <>
-                {checked ? "Disable Gassless" : "Enable Gasless"}
-                {!skipVerification && " (World ID verification required)"}
+                Enable Cross-chain Gas Subsidiary
+                {!skipVerification && " with World ID"}
               </>
             )}
           </Label>

@@ -4,7 +4,7 @@ import { writeContract } from "@wagmi/core";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { switchChain } from "@wagmi/core";
 import { ethers } from "ethers";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAccount, useConfig, useReadContract } from "wagmi";
 
 import { Button } from "@/components/ui/button";
@@ -180,7 +180,10 @@ export function DepositManagerPlugin() {
       <div className="flex flex-col space-y-2">
         {isWorldIdVerified && isGasslessEnabled && (
           <>
-            <div className="flex justify-between items-center">
+            <p className="mt-4 font-medium">
+              Cross-chain Gas Subsidiary Dashboard
+            </p>
+            <div className="flex justify-between items-center text-sm">
               <span>Current Deposit:</span>
               {depositAmount !== null && depositAmount !== undefined && (
                 <span>{ethers.formatUnits(depositAmount)} ETH</span>
@@ -189,6 +192,7 @@ export function DepositManagerPlugin() {
             <div className="flex justify-between items-center">
               <Input
                 type="number"
+                placeholder="deposit amount"
                 min={0}
                 value={newDepositAmount}
                 onChange={(e) => {
