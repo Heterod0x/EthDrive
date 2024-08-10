@@ -128,12 +128,17 @@ export function EthDrive({ path }: { path?: string }) {
     getStepIcon,
   } = useTransactionStatus();
 
+  const [actualTransction, setActualTransaction] = useState<any>();
+  const [transactionType, setTransactionType] = useState<
+    "create" | "add-eth" | "add-ccip" | "transfer"
+  >("create");
+
   const handleTransactionAsDirectory = useCallback(
     async (callData: Hex) => {
+      setTransactionStatusModalMode("progress");
       setCurrentStep("");
       setTransactionHash("");
       setError("");
-      setIsTransactionStatusModalOpen(true);
       setSteps(accountAbstractionSteps as any);
       try {
         if (!walletClient) {
@@ -266,10 +271,10 @@ export function EthDrive({ path }: { path?: string }) {
   const handleTransaction = useCallback(
     async (to: Address, value = BigInt(0), callData: Hex) => {
       console.log("handleTransaction");
+      setTransactionStatusModalMode("progress");
       setCurrentStep("");
       setTransactionHash("");
       setError("");
-      setIsTransactionStatusModalOpen(true);
       setSteps(transactionSteps as any);
       try {
         if (!selectedDirectoryChainId) {
@@ -376,18 +381,28 @@ export function EthDrive({ path }: { path?: string }) {
       functionName: "createDirectory",
       args: [finalPath],
     });
-    handleTransaction(
-      selectedChainAddresses.ethDrive,
-      BigInt(0),
-      callData as Hex,
-    );
+    setActualTransaction(() => () => {
+      handleTransaction(
+        selectedChainAddresses.ethDrive,
+        BigInt(0),
+        callData as Hex,
+      );
+    });
+    setTransactionStatusModalMode("preview");
+    setTransactionType("create");
+    setIsTransactionStatusModalOpen(true);
   }
 
   async function handleDepositETH() {
     console.log("depositing 0.001 ETH...");
     const to = selectedDirectory.tokenBoundAccount;
     const value = parseEther("0.001");
-    handleTransaction(to as Address, value, "0x");
+    setActualTransaction(() => () => {
+      handleTransaction(to as Address, value, "0x");
+    });
+    setTransactionStatusModalMode("preview");
+    setTransactionType("add-eth");
+    setIsTransactionStatusModalOpen(true);
   }
 
   async function handleMintMnB() {
@@ -400,7 +415,12 @@ export function EthDrive({ path }: { path?: string }) {
     const chainId =
       selectedDirectoryChainId?.toString() as keyof typeof chainlinkCCIPBnMAddresses;
     const to = chainlinkCCIPBnMAddresses[chainId];
-    handleTransaction(to as Address, BigInt(0), callData as Hex);
+    setActualTransaction(() => () => {
+      handleTransaction(to as Address, BigInt(0), callData as Hex);
+    });
+    setTransactionStatusModalMode("preview");
+    setTransactionType("add-ccip");
+    setIsTransactionStatusModalOpen(true);
   }
 
   const [createDirectoryName, setCreateDirectoryName] = useState("");
@@ -410,6 +430,10 @@ export function EthDrive({ path }: { path?: string }) {
     useState(false);
   const [isTransactionStatusModalOpen, setIsTransactionStatusModalOpen] =
     useState(false);
+  const [transactionStatusModalMode, setTransactionStatusModalMode] = useState<
+    "preview" | "progress"
+  >("preview");
+
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -691,7 +715,7 @@ export function EthDrive({ path }: { path?: string }) {
                           </>
                         )}
                       </Card>
-                      <div className="bg-gray-100 p-4 rounded">
+                      <div className="bg-gray-100 p-6 rounded">
                         <p className="mb-2 font-semibold text-sm">
                           Tester Actions
                         </p>
@@ -756,42 +780,128 @@ export function EthDrive({ path }: { path?: string }) {
         onOpenChange={setIsTransactionStatusModalOpen}
       >
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Transaction Status</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            <div className="space-y-4">
-              {steps.map((step) => (
-                <div key={step.key} className="flex items-center space-x-4">
-                  {getStepIcon(step.key)}
-                  <div className="flex-grow">
-                    <p
-                      className={`font-medium ${currentStep === step.key ? "text-blue-500" : ""}`}
-                    >
-                      {step.label}
+          {transactionStatusModalMode == "preview" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Transaction Preview</DialogTitle>
+              </DialogHeader>
+              <div className="my-4">
+                {transactionType == "create" && (
+                  <>
+                    <p className="text-gray-600 font-medium">
+                      Create Directory
                     </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {currentStep == "confirmed" && transactionHash && (
-              <div className="mt-4 p-2 bg-blue-100 border border-blue-300 rounded text-blue-700 break-all text-xs">
-                <p className="mb-2">Transaction Detail:</p>
-                <Link
-                  className="underline"
-                  href={`${selectedChainConfig?.exproler}/tx/${transactionHash}`}
-                  target="_blank"
+                    <p className="text-gray-800 mt-2 text-sm">
+                      {selectedDirectoryPath}/{createDirectoryName}
+                    </p>
+                  </>
+                )}
+                {transactionType == "add-eth" && (
+                  <>
+                    <p className="text-gray-600 font-medium">
+                      Add 0.001 ETH to
+                    </p>
+                    <p className="text-gray-800 mt-2 text-sm">
+                      {selectedDirectoryPath}
+                    </p>
+                  </>
+                )}
+                {transactionType == "add-ccip" && (
+                  <>
+                    <p className="text-gray-600 font-medium">
+                      Add 1 CCIP BnM to
+                    </p>
+                    <p className="text-gray-800 mt-2 text-sm">
+                      {selectedDirectoryPath}
+                    </p>
+                  </>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  onClick={() => {
+                    if (actualTransction) {
+                      actualTransction();
+                    }
+                  }}
                 >
-                  {selectedChainConfig?.exproler}/tx/{transactionHash}
-                </Link>
+                  Confirm
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+          {transactionStatusModalMode == "progress" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Transaction Status</DialogTitle>
+              </DialogHeader>
+              <div className="my-4">
+                {transactionType == "create" && (
+                  <>
+                    <p className="text-gray-600 font-medium">
+                      Create Directory
+                    </p>
+                    <p className="text-gray-800 mt-2 text-sm">
+                      {selectedDirectoryPath}/{createDirectoryName}
+                    </p>
+                  </>
+                )}
+                {transactionType == "add-eth" && (
+                  <>
+                    <p className="text-gray-600 font-medium">
+                      Add 0.001 ETH to
+                    </p>
+                    <p className="text-gray-800 mt-2 text-sm">
+                      {selectedDirectoryPath}
+                    </p>
+                  </>
+                )}
+                {transactionType == "add-ccip" && (
+                  <>
+                    <p className="text-gray-600 font-medium">
+                      Add 1 CCIP BnM to
+                    </p>
+                    <p className="text-gray-800 mt-2 text-sm">
+                      {selectedDirectoryPath}
+                    </p>
+                  </>
+                )}
               </div>
-            )}
-            {error && (
-              <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded text-red-700 break-all text-xs">
-                {error}
+              <div>
+                <div className="space-y-4">
+                  {steps.map((step) => (
+                    <div key={step.key} className="flex items-center space-x-4">
+                      {getStepIcon(step.key)}
+                      <div className="flex-grow">
+                        <p
+                          className={`font-medium ${currentStep === step.key ? "text-blue-500" : ""}`}
+                        >
+                          {step.label}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {currentStep == "confirmed" && transactionHash && (
+                  <div className="mt-8 p-2 bg-blue-100 border border-blue-300 rounded text-blue-700 break-all text-xs">
+                    <p className="mb-2">Transaction Detail:</p>
+                    <Link
+                      className="underline"
+                      href={`${selectedChainConfig?.exproler}/tx/${transactionHash}`}
+                      target="_blank"
+                    >
+                      {selectedChainConfig?.exproler}/tx/{transactionHash}
+                    </Link>
+                  </div>
+                )}
+                {error && (
+                  <div className="mt-8 p-2 bg-red-100 border border-red-300 rounded text-red-700 break-all text-xs">
+                    {error}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
       <Dialog open={isSettingsModalOpen} onOpenChange={setIsSettingsModalOpen}>
