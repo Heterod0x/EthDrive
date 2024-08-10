@@ -17,12 +17,33 @@ export function useWalletConnect(
 ) {
   const [web3wallet, setWeb3Wallet] = useState<any>();
   const [uri, setUri] = useState("");
-  const [name, setName] = useState("");
+  const [proposerName, setProposerName] = useState("");
+  const [proposerUrl, setProposerUrl] = useState("");
+  const [proposerIcon, setProposerIcon] = useState("");
   const [topic, setTopic] = useState("");
   const sessionEstablished = useRef(false);
 
-  useEffect(() => {
-    if (!selectedDirectory || !selectedDirectory.tokenBoundAccount || topic) {
+  const init = () => {
+    if (sessionEstablished.current && web3wallet && topic) {
+      console.log("walletConnect: disconnect");
+      try {
+        web3wallet.disconnectSession({
+          topic,
+          reason: getSdkError("USER_DISCONNECTED"),
+        });
+      } catch (error) {
+        console.log("walletConnect: error", error);
+      }
+      setWeb3Wallet(undefined);
+      setUri("");
+      setTopic("");
+      setProposerName("");
+      setProposerUrl("");
+      setProposerIcon("");
+      sessionEstablished.current = false;
+    }
+
+    if (!selectedDirectory || !selectedDirectory.tokenBoundAccount) {
       return;
     }
 
@@ -72,6 +93,9 @@ export function useWalletConnect(
               namespaces: approvedNamespaces,
             });
             console.log("walletConnect: session approved", topic);
+            setProposerName(params.proposer.metadata.name);
+            setProposerUrl(params.proposer.metadata.url);
+            setProposerIcon(params.proposer.metadata.icons[0]);
             setTopic(topic);
             sessionEstablished.current = true; // Mark session as established
           } catch (error) {
@@ -84,7 +108,6 @@ export function useWalletConnect(
         },
       );
       console.log("walletConnect: setEthSendTransaction");
-      web3wallet;
       web3wallet.on(
         "session_request",
         async (event: Web3WalletTypes.SessionRequest) => {
@@ -109,25 +132,23 @@ export function useWalletConnect(
         },
       );
     })();
-    return () => {
-      if (sessionEstablished.current && web3wallet && topic) {
-        console.log("walletConnect: disconnect");
-        try {
-          web3wallet.disconnectSession({
-            topic,
-            reason: getSdkError("USER_DISCONNECTED"),
-          });
-        } catch (error) {
-          console.log("walletConnect: error", error);
-        }
-        setWeb3Wallet(undefined);
-        setUri("");
-        setTopic("");
-        setName("");
-        sessionEstablished.current = false;
-      }
-    };
-  }, [selectedDirectory, topic]);
+  };
 
-  return { web3wallet, uri, name, setUri };
+  useEffect(() => {
+    init();
+  }, [selectedDirectory]);
+
+  const refresh = () => {
+    init();
+  };
+
+  return {
+    web3wallet,
+    uri,
+    setUri,
+    proposerName,
+    proposerUrl,
+    proposerIcon,
+    refresh,
+  };
 }

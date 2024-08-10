@@ -12,6 +12,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import {
   Address,
   Hex,
+  checksumAddress,
   encodeFunctionData,
   formatEther,
   parseEther,
@@ -339,10 +340,15 @@ export function EthDrive({ path }: { path?: string }) {
     rootDirectory,
     handleTransactionAsDirectory,
   );
-  const { web3wallet, uri, setUri } = useWalletConnect(
-    selectedDirectory,
-    handleTransactionAsDirectory,
-  );
+  const {
+    web3wallet,
+    uri,
+    setUri,
+    proposerName,
+    proposerUrl,
+    proposerIcon,
+    refresh: refreshWalletConnect,
+  } = useWalletConnect(selectedDirectory, handleTransactionAsDirectory);
 
   async function handleCreateDirectoryTransaction() {
     setIsCreateDirectoryModalOpen(false);
@@ -454,7 +460,9 @@ export function EthDrive({ path }: { path?: string }) {
                 {selectedDirectory.tokenBoundAccount && (
                   <div className="flex items-center">
                     <p className="text-sm">
-                      {selectedDirectory.tokenBoundAccount}
+                      {checksumAddress(
+                        selectedDirectory.tokenBoundAccount as Address,
+                      )}
                     </p>
                     <CopyToClipboard
                       text={selectedDirectory.tokenBoundAccount}
@@ -469,12 +477,16 @@ export function EthDrive({ path }: { path?: string }) {
                 {(selectedDirectory.depth >= 1 &&
                 isOlnyShowConnectedDirectory &&
                 connectedAddress
-                  ? selectedDirectory.subdirectories.filter(
-                      (subDir) =>
-                        subDir.holder?.toLowerCase() ===
-                        connectedAddress.toLowerCase(),
+                  ? selectedDirectory.subdirectories
+                      .filter((subDir) => subDir.name)
+                      .filter(
+                        (subDir) =>
+                          subDir.holder?.toLowerCase() ===
+                          connectedAddress.toLowerCase(),
+                      )
+                  : selectedDirectory.subdirectories.filter(
+                      (subDir) => subDir.name,
                     )
-                  : selectedDirectory.subdirectories
                 ).map((directory) => (
                   <Card
                     key={directory.path}
@@ -566,23 +578,55 @@ export function EthDrive({ path }: { path?: string }) {
                       <p className="font-semibold mb-2">
                         WalletConnect with Directory
                       </p>
-                      <div className="mb-8">
-                        <Input
-                          type="text"
-                          placeholder="wc:"
-                          className="mb-2"
-                          onChange={(e) => setUri(e.target.value)}
-                        />
-                        <Button
-                          className="w-full"
-                          disabled={!uri}
-                          onClick={() => {
-                            web3wallet.pair({ uri });
-                          }}
-                        >
-                          Pair Directory with dApps
-                        </Button>
-                      </div>
+                      <Card className="mb-8 p-4">
+                        {!proposerName && (
+                          <>
+                            <Input
+                              type="text"
+                              placeholder="wc:"
+                              className="mb-2"
+                              onChange={(e) => setUri(e.target.value)}
+                            />
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              disabled={!uri}
+                              onClick={() => {
+                                web3wallet.pair({ uri });
+                              }}
+                            >
+                              Pair Directory with dApp
+                            </Button>
+                          </>
+                        )}
+                        {proposerName && (
+                          <>
+                            <p className="mb-4 font-medium">Connected dApp</p>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <img className="w-6 h-6" src={proposerIcon} />
+                              <p className="text-sm font-medium">
+                                {proposerName}
+                              </p>
+                            </div>
+                            <Link
+                              className="text-blue-700 underline text-sm"
+                              target="_blank"
+                              href={proposerUrl}
+                            >
+                              {proposerUrl}
+                            </Link>
+                            <Button
+                              size="sm"
+                              className="w-full mt-4"
+                              onClick={() => {
+                                refreshWalletConnect();
+                              }}
+                            >
+                              Disconnect
+                            </Button>
+                          </>
+                        )}
+                      </Card>
                       <div className="bg-gray-200 p-4 rounded">
                         <p className="mb-2 font-semibold text-sm">
                           Tester Actions
@@ -670,7 +714,9 @@ export function EthDrive({ path }: { path?: string }) {
               <div className="mt-4 p-2 bg-blue-100 border border-blue-300 rounded text-blue-700 break-all text-xs">
                 <p className="mb-2">Transaction Detail:</p>
                 <Link
+                  className="underline"
                   href={`${selectedChainConfig?.exproler}/tx/${transactionHash}`}
+                  target="_blank"
                 >
                   {selectedChainConfig?.exproler}/tx/{transactionHash}
                 </Link>
