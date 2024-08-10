@@ -25,10 +25,14 @@ export async function POST(req: NextRequest) {
 
   // 1. Check if account has been verified by World ID and deposited
   const payable = await contract.isPayable(account);
+  console.log("payable", payable);
 
   // 2. Check if account has deposited enough amount for fee
   const depositAmount = await contract.deposited(account);
+  console.log("depositAmount", depositAmount);
+
   const hasEnoughDeposit = depositAmount > BigInt(fee);
+  console.log("fee", fee);
 
   return NextResponse.json({
     ok: payable && hasEnoughDeposit,

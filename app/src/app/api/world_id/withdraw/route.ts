@@ -16,6 +16,8 @@ type Request = {
 export async function POST(req: NextRequest) {
   const body: Request = await req.json();
   const { account, fee } = body;
+  console.log("account", account);
+  console.log("fee", fee);
 
   const provider = new ethers.JsonRpcProvider(customRollupRpc);
   const signer = new ethers.Wallet(ownerKey!, provider);

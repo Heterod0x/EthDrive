@@ -102,7 +102,6 @@ export const updateAlchemyGasManagerWhiteList = async (
   if (updatePolicyData.error) {
     throw new Error(updatePolicyData.error.message);
   }
-  console.log("updatePolicyData", updatePolicyData);
 };
 
 export const withdrawIfUserOperationIsFundedInAlchemy = async (

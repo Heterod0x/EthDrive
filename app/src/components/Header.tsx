@@ -10,10 +10,8 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Address } from "viem";
 import { useAccount } from "wagmi";
 
-import { updateAlchemyGasManagerWhiteList } from "@/app/actions/integrate-alchemy-and-eth-drive-chain";
 import { Button } from "@/components/ui/button";
 import { usePlugins } from "@/hooks/usePlugins";
 
@@ -43,17 +41,6 @@ export function Header({
       </Link>
       <div className="flex items-center space-x-2">
         <>
-          <Button
-            onClick={async () => {
-              await updateAlchemyGasManagerWhiteList(
-                "11155111",
-                "0xd90d539deb1af0c5400ab9c389acaf040753f5cc",
-                "0",
-              );
-            }}
-          >
-            Test
-          </Button>
           {!plugins.isAccountKitEnabled && (
             <>
               {isConnected && isDirectorySelected && (
