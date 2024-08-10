@@ -487,7 +487,7 @@ export function EthDrive({ path }: { path?: string }) {
           >
             <PanelLeft size={24} />
           </button>
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-4">
             <div className="flex items-center">
               <DirectoryPathBreadcrumb
                 selectedDirectoryPath={selectedDirectoryPath}
@@ -502,25 +502,28 @@ export function EthDrive({ path }: { path?: string }) {
           </div>
           {selectedDirectoryPath == selectedDirectory.path && (
             <div>
-              <div className="mb-8 space-y-2">
+              <div className="mb-8">
                 {selectedDirectory.tokenBoundAccount && (
-                  <div className="flex items-center">
-                    <p className="text-xs">
-                      {checksumAddress(
-                        selectedDirectory.tokenBoundAccount as Address,
-                      )}
-                    </p>
-                    <CopyToClipboard
-                      text={selectedDirectory.tokenBoundAccount}
-                    />
-                  </div>
+                  <>
+                    <p className="font-bold mb-2">Token Bound Account</p>
+                    <div className="flex items-center">
+                      <p className="text-xs text-gray-600">
+                        {checksumAddress(
+                          selectedDirectory.tokenBoundAccount as Address,
+                        )}
+                      </p>
+                      <CopyToClipboard
+                        text={selectedDirectory.tokenBoundAccount}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
               {selectedDirectory.holder && (
                 <div className="mb-8">
                   <p className="font-bold mb-2">Owners</p>
                   <div className="flex items-center">
-                    <p className="text-xs">
+                    <p className="text-xs text-gray-600">
                       {checksumAddress(selectedDirectory.holder as Address)}
                     </p>
                     <CopyToClipboard text={selectedDirectory.holder} />
@@ -547,7 +550,7 @@ export function EthDrive({ path }: { path?: string }) {
                 ).map((directory) => (
                   <Card
                     key={directory.path}
-                    className="flex items-center p-4 cursor-pointer w-full mb-2"
+                    className="relative flex items-center p-6 cursor-pointer w-full mb-2"
                     onClick={() => {
                       setSelectedDirectoryPath(directory.path);
                     }}
@@ -594,11 +597,13 @@ export function EthDrive({ path }: { path?: string }) {
                         )}
                       </>
                     )}
-
                     {directory.depth >= 2 && (
                       <Folder className="h-6 w-6 mr-3" />
                     )}
                     <span>{directory.name}</span>
+                    <span className="absolute bottom-1 right-3 text-xs text-gray-400 truncate w-40 md:w-80 text-right">
+                      {directory.tokenBoundAccount}
+                    </span>
                   </Card>
                 ))}
               </div>
@@ -609,7 +614,7 @@ export function EthDrive({ path }: { path?: string }) {
                 {selectedDirectory.files.map((file, i) => (
                   <Card
                     key={`files_${i}`}
-                    className="flex items-center justify-between p-4 cursor-pointer w-full cursor-move"
+                    className="flex items-center justify-between p-6 cursor-pointer w-full cursor-move relative"
                     draggable
                     onDragStart={handleDragStart(file)}
                   >
@@ -639,7 +644,7 @@ export function EthDrive({ path }: { path?: string }) {
                       <p className="font-semibold mb-2">
                         WalletConnect with Directory
                       </p>
-                      <Card className="mb-8 p-4">
+                      <Card className="mb-8 p-6">
                         {!proposerName && (
                           <>
                             <Input
