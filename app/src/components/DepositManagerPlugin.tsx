@@ -4,13 +4,14 @@ import { writeContract } from "@wagmi/core";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { switchChain } from "@wagmi/core";
 import { ethers } from "ethers";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useAccount, useConfig, useReadContract } from "wagmi";
 
 import { Button } from "@/components/ui/button";
 import GasDepositManagerABI from "@/constants/abis/GasDepositManager.json";
 import { usePlugins } from "@/hooks/usePlugins";
 import { conduitChain } from "@/lib/chain";
+import { baseUrl } from "@/lib/url";
 
 import { WorldIDProver } from "./WorldIDProver";
 import { Input } from "./ui/input";
@@ -58,6 +59,27 @@ export function DepositManagerPlugin() {
 
   console.log("debug::depositAmount", depositAmount);
 
+  const syncPromiseRef = useRef<Promise<Response> | null>(null);
+  const onVerificationStart = useCallback(() => {
+    console.log('calling /api/world_id/sync');
+    
+    syncPromiseRef.current = fetch(`${baseUrl}/api/world_id/sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    })
+      .then((res) => {
+        console.log("World ID synced", res);
+        return res;
+      })
+      .catch((err) => {
+        console.error("failed to World ID roots sync", err);
+        throw new err;
+      });
+  }, []);
+
   const [verifying, setVerifying] = useState(false);
   const onWorldIDProofGenerated = useCallback(
     async (proof: any) => {
@@ -73,6 +95,8 @@ export function DepositManagerPlugin() {
       try {
         setVerifying(true);
         await switchChain(config, { chainId: conduitChain.id });
+
+        await syncPromiseRef.current;
 
         const txHash = await writeContract(config, {
           abi: GasDepositManagerABI,
@@ -181,6 +205,7 @@ export function DepositManagerPlugin() {
         address={address!}
         onProofGenerated={onWorldIDProofGenerated}
         onSwitchToggled={onGaslessSwitchToggled}
+        onVerificationStart={onVerificationStart}
       />
       <div className="flex flex-col space-y-2">
         {plugins.isCrosschainGasSubsidiaryEnabled && (

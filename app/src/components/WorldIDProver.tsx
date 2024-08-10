@@ -17,6 +17,7 @@ type Props = {
   verifying: boolean;
   onProofGenerated?: (proof: WorldIdProof) => void;
   onSwitchToggled: (nextStatus: boolean) => void;
+  onVerificationStart?: VoidFunction;
 };
 
 type WorldIdProof = {
@@ -34,6 +35,7 @@ export const WorldIDProver = ({
   verifying,
   onProofGenerated,
   onSwitchToggled,
+  onVerificationStart,
 }: Props) => {
   const proofRef = useRef<WorldIdProof | null>(null);
 
@@ -68,6 +70,8 @@ export const WorldIDProver = ({
 
                 return;
               }
+
+              onVerificationStart?.();
 
               open();
             }}
