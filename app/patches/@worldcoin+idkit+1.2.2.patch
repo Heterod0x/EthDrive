@@ -1,0 +1,47 @@
+diff --git a/node_modules/@worldcoin/idkit/build/index.js b/node_modules/@worldcoin/idkit/build/index.js
+index 65d2e5b..102c721 100644
+--- a/node_modules/@worldcoin/idkit/build/index.js
++++ b/node_modules/@worldcoin/idkit/build/index.js
+@@ -666,12 +666,12 @@ select{
+ .inset-0{
+   inset: 0;
+ }
+-.z-10{
+-  z-index: 10;
+-}
+ .z-50{
+   z-index: 50;
+ }
++.z-500{
++  z-index: 100;
++}
+ .mx-6{
+   margin-left: 24px;
+   margin-right: 24px;
+@@ -1847,7 +1847,7 @@ var IDKitWidget = ({ children, ...config }) => {
+     children?.({ open: () => onOpenChange(true) }),
+     /* @__PURE__ */ jsx15(Dialog.Portal, { forceMount: true, children: /* @__PURE__ */ jsx15(Fragment2, { children: /* @__PURE__ */ jsx15(AnimatePresence2, { children: isOpen && /* @__PURE__ */ jsxs11(root.div, { mode: "open", id: "idkit-widget", children: [
+       /* @__PURE__ */ jsx15(Styles_default, {}),
+-      /* @__PURE__ */ jsxs11("div", { id: "modal", className: "fixed z-10 font-sans", children: [
++      /* @__PURE__ */ jsxs11("div", { id: "modal", className: "fixed z-50 font-sans", children: [
+         /* @__PURE__ */ jsx15(Dialog.Overlay, { asChild: true, children: /* @__PURE__ */ jsx15(
+           motion2.div,
+           {
+@@ -1857,7 +1857,7 @@ var IDKitWidget = ({ children, ...config }) => {
+             className: "fixed inset-0 bg-black/50 backdrop-blur-lg"
+           }
+         ) }),
+-        /* @__PURE__ */ jsx15("div", { className: "fixed inset-0 z-10 overflow-y-hidden md:overflow-y-auto", children: /* @__PURE__ */ jsx15("div", { className: "flex min-h-full items-end justify-center text-center md:items-center md:p-4", children: /* @__PURE__ */ jsx15(Dialog.Content, { asChild: true, children: /* @__PURE__ */ jsx15(
++        /* @__PURE__ */ jsx15("div", { className: "fixed inset-0 z-50 overflow-y-hidden md:overflow-y-auto", children: /* @__PURE__ */ jsx15("div", { className: "flex min-h-full items-end justify-center text-center md:items-center md:p-4", children: /* @__PURE__ */ jsx15(Dialog.Content, { asChild: true, children: /* @__PURE__ */ jsx15(
+           motion2.div,
+           {
+             layout: media == "mobile" ? "position" : true,
+@@ -1871,7 +1871,7 @@ var IDKitWidget = ({ children, ...config }) => {
+               animateMob: { translateY: 0 }
+             },
+             transition: { layout: { duration: 0.15 } },
+-            className: "relative z-50 flex min-h-screen w-full flex-col bg-white pt-6 shadow focus:outline-none focus-visible:ring focus-visible:ring-purple-500/75 dark:bg-0d151d md:min-h-[35rem] md:max-w-md md:rounded-2xl",
++            className: "relative z-500 flex min-h-screen w-full flex-col bg-white pt-6 shadow focus:outline-none focus-visible:ring focus-visible:ring-purple-500/75 dark:bg-0d151d md:min-h-[35rem] md:max-w-md md:rounded-2xl",
+             children: /* @__PURE__ */ jsxs11(Toast.Provider, { children: [
+               /* @__PURE__ */ jsx15(Toast.Viewport, { className: "flex justify-center" }),
+               /* @__PURE__ */ jsx15("div", { className: "mx-6 mb-12 flex items-center justify-between", children: /* @__PURE__ */ jsx15(Dialog.Close, { className: "flex items-center justify-center rounded-full dark:text-white", children: /* @__PURE__ */ jsx15(XMarkIcon_default, { className: "h-5 w-5" }) }) }),

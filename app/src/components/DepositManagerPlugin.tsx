@@ -32,7 +32,7 @@ export function DepositManagerPlugin() {
   const { address } = useAccount();
   const config = useConfig();
 
-  console.log('debug::address', address);
+  console.log("debug::address", address);
 
   const [isGasslessEnabled, setIsGasslessEnabled] = useIsGasslessEnabled();
 
@@ -180,7 +180,10 @@ export function DepositManagerPlugin() {
       <div className="flex flex-col space-y-2">
         {isWorldIdVerified && isGasslessEnabled && (
           <>
-            <div className="flex justify-between items-center">
+            <p className="mt-4 font-medium">
+              Cross-chain Gas Subsidiary Dashboard
+            </p>
+            <div className="flex justify-between items-center text-sm">
               <span>Current Deposit:</span>
               {depositAmount !== null && depositAmount !== undefined && (
                 <span>{ethers.formatUnits(depositAmount)} ETH</span>
@@ -189,6 +192,7 @@ export function DepositManagerPlugin() {
             <div className="flex justify-between items-center">
               <Input
                 type="number"
+                placeholder="deposit amount"
                 min={0}
                 value={newDepositAmount}
                 onChange={(e) => {
