@@ -87,7 +87,7 @@ export function ExpandableDirectory({
             alt="logo"
             width={16}
             height={16}
-            className="mr-2"
+            className="mr-3"
           />
         )}
         {directory.depth === 1 && (
@@ -98,7 +98,7 @@ export function ExpandableDirectory({
                 alt="logo-tenderly-virtual-testnet"
                 width={16}
                 height={16}
-                className="mr-2"
+                className="mr-3"
               />
             )}
             {directory.path === "root/sepolia" && (
@@ -107,7 +107,7 @@ export function ExpandableDirectory({
                 alt="logo-sepolia"
                 width={16}
                 height={16}
-                className="mr-2"
+                className="mr-3"
               />
             )}
             {directory.path === "root/optimism-sepolia" && (
@@ -116,7 +116,7 @@ export function ExpandableDirectory({
                 alt="logo-optimism-sepolia"
                 width={16}
                 height={16}
-                className="mr-2"
+                className="mr-3"
               />
             )}
             {directory.path === "root/base-sepolia" && (
@@ -125,12 +125,12 @@ export function ExpandableDirectory({
                 alt="logo-base-sepolia"
                 width={16}
                 height={16}
-                className="mr-2"
+                className="mr-3"
               />
             )}
           </>
         )}
-        {directory.depth >= 2 && <Folder className="w-4 h-4 mr-2" />}
+        {directory.depth >= 2 && <Folder className="w-4 h-4 mr-3" />}
         <span
           className="text-base font-medium truncate"
           style={{ maxWidth: `${nameMaxWidth}px` }}
