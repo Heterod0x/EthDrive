@@ -435,7 +435,7 @@ export function EthDrive({ path }: { path?: string }) {
           )}
         </Sidebar>
         <div className="p-4 w-full">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-2">
             <div className="flex items-center">
               <DirectoryPathBreadcrumb
                 selectedDirectoryPath={selectedDirectoryPath}
@@ -448,40 +448,24 @@ export function EthDrive({ path }: { path?: string }) {
               />
             </div>
           </div>
-          {isConnected && selectedDirectory.depth >= 1 && (
-            <div className="flex items-center space-x-2 mb-4">
-              <Switch
-                checked={isOlnyShowConnectedDirectory}
-                onCheckedChange={setIsOlnyShowConnectedDirectory}
-              />
-              <Label htmlFor="airplane-mode">
-                Only show connected address&apos;s directory
-              </Label>
-            </div>
-          )}
           {selectedDirectoryPath == selectedDirectory.path && (
             <div>
-              <div className="mb-4 space-y-2">
+              <div className="pl-4 mb-8 space-y-2">
                 {selectedDirectory.tokenBoundAccount && (
                   <div className="flex items-center">
                     <p className="text-sm">
-                      Token Bound Account: {selectedDirectory.tokenBoundAccount}
+                      {selectedDirectory.tokenBoundAccount}
                     </p>
                     <CopyToClipboard
                       text={selectedDirectory.tokenBoundAccount}
                     />
                   </div>
                 )}
-                {selectedDirectory.holder && (
-                  <div className="flex items-center">
-                    <p className="text-sm">
-                      Token Holder: {selectedDirectory.holder}
-                    </p>
-                    <CopyToClipboard text={selectedDirectory.holder} />
-                  </div>
-                )}
               </div>
-              <div className="mb-4">
+              {selectedDirectory.subdirectories.length > 0 && (
+                <p className="font-bold mb-2">Directories</p>
+              )}
+              <div className="mb-8">
                 {(selectedDirectory.depth >= 1 &&
                 isOlnyShowConnectedDirectory &&
                 connectedAddress
@@ -548,10 +532,15 @@ export function EthDrive({ path }: { path?: string }) {
                     <span>{directory.name}</span>
                   </Card>
                 ))}
+              </div>
+              {selectedDirectory.files.length > 0 && (
+                <p className="font-bold mb-2">Files</p>
+              )}
+              <div className="mb-8 space-y-2">
                 {selectedDirectory.files.map((file, i) => (
                   <React.Fragment key={`files_${i}`}>
                     <Card
-                      className="flex items-center p-4 cursor-pointer w-full mb-2"
+                      className="flex items-center p-4 cursor-pointer w-full"
                       draggable
                       onDragStart={handleDragStart(file)}
                     >
@@ -574,28 +563,10 @@ export function EthDrive({ path }: { path?: string }) {
                   selectedDirectory.holder?.toLowerCase() ==
                     connectedAddress?.toLowerCase() && (
                     <div>
-                      <div className="flex space-x-2 mb-4">
-                        {!plugins.isAccountKitEnabled && (
-                          <Button
-                            onClick={() => {
-                              handleDepositETH();
-                            }}
-                          >
-                            Add 0.001 ETH
-                          </Button>
-                        )}
-                        {!plugins.isAccountKitEnabled &&
-                          selectedChainConfig?.isCCIPEnabled && (
-                            <Button
-                              onClick={() => {
-                                handleMintMnB();
-                              }}
-                            >
-                              Add 1 CCIP BnM
-                            </Button>
-                          )}
-                      </div>
-                      <div>
+                      <p className="font-semibold mb-2">
+                        WalletConnect with Directory
+                      </p>
+                      <div className="mb-8">
                         <Input
                           type="text"
                           placeholder="wc:"
@@ -603,12 +574,42 @@ export function EthDrive({ path }: { path?: string }) {
                           onChange={(e) => setUri(e.target.value)}
                         />
                         <Button
+                          className="w-full"
+                          disabled={!uri}
                           onClick={() => {
                             web3wallet.pair({ uri });
                           }}
                         >
-                          Pair
+                          Pair Directory with dApps
                         </Button>
+                      </div>
+                      <div className="bg-gray-200 p-4 rounded">
+                        <p className="mb-2 font-semibold text-sm">
+                          Tester Actions
+                        </p>
+                        <div className="flex space-x-2">
+                          {!plugins.isAccountKitEnabled && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                handleDepositETH();
+                              }}
+                            >
+                              Add 0.001 ETH
+                            </Button>
+                          )}
+                          {!plugins.isAccountKitEnabled &&
+                            selectedChainConfig?.isCCIPEnabled && (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  handleMintMnB();
+                                }}
+                              >
+                                Add 1 CCIP BnM
+                              </Button>
+                            )}
+                        </div>
                       </div>
                     </div>
                   )}
