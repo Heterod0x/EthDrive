@@ -599,8 +599,7 @@ export function EthDrive({ path }: { path?: string }) {
                       )}
                     </div>
                     <div>
-                      {" "}
-                      <GripVertical className="h-5 w-5 text-gray-400" />
+                      <GripVertical className="h-6 w-6 text-gray-400" />
                     </div>
                   </Card>
                 ))}

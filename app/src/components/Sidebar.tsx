@@ -1,12 +1,12 @@
 "use client";
 
-import { X } from "lucide-react";
 import React from "react";
+
+import { ScrollArea } from "./ui/scroll-area";
 
 export function Sidebar({
   children,
   isOpen,
-  toggleSidebar,
 }: {
   children: React.ReactNode;
   isOpen: boolean;
@@ -15,11 +15,11 @@ export function Sidebar({
   return (
     <>
       <div
-        className={`fixed top-0 left-0 h-full z-5 transition-transform transform duration-500 ${
+        className={`fixed top-0 left-0 h-full z-10 transition-transform transform duration-500 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:relative md:translate-x-0 md:w-80 border-r`}
+        } md:relative md:translate-x-0 md:w-80 border-r bg-white md:bg-transparent`}
       >
-        <div className="h-full p-4 space-y-4">{children}</div>
+        <ScrollArea className="h-full p-4 space-y-4">{children}</ScrollArea>
       </div>
     </>
   );
