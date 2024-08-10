@@ -52,6 +52,22 @@ const config: HardhatUserConfig = {
       accounts: accounts,
     }
   },
+  etherscan: {
+    apiKey: {
+      "sepolia": process.env.ETHERSCAN_API_KEY!,
+      'conduit': "fake_api_key"
+    },
+    customChains: [
+      {
+        network: "conduit",
+        chainId: 15830,
+        urls: {
+          apiURL: "https://explorer-superhack-test-v4369l32sl.t.conduit.xyz/api",
+          browserURL: "https://explorer-superhack-test-v4369l32sl.t.conduit.xyz/",
+        }
+      }
+    ]
+  },
   tenderly: {
     project: "hackathon",
     username: "taijusanagi",
