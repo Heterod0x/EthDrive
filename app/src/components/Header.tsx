@@ -68,14 +68,12 @@ export function Header({
                       <Plus className="mr-2 h-4 w-4" /> New
                     </Button>
                   )}
-                  <button className="btn btn-primary" onClick={() => logout()}>
+                  <Button variant={"secondary"} onClick={() => logout()}>
                     Log out
-                  </button>
+                  </Button>
                 </>
               ) : (
-                <button className="btn btn-primary" onClick={openAuthModal}>
-                  Login
-                </button>
+                <Button onClick={openAuthModal}>Login</Button>
               )}
             </>
           )}

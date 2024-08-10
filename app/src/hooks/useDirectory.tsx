@@ -86,8 +86,8 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
         files: [],
       },
       {
-        path: "root/metal-l2-mainnet",
-        name: "metal-l2-mainnet",
+        path: "root/metal-l2-testnet",
+        name: "metal-l2-testnet",
         subdirectories: [],
         depth: 1,
         files: [],

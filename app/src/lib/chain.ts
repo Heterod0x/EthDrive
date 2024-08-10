@@ -24,9 +24,26 @@ export const virtualChain = defineChain({
   testnet: true,
 });
 
+export const metalL2TestnetChain = defineChain({
+  id: 1740,
+  name: "Metal L2 Testnet",
+  iconUrl: "/logo-metal-l2-testnet.svg",
+  nativeCurrency: {
+    decimals: 18,
+    name: "ETH",
+    symbol: "ETH",
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://testnet.rpc.metall2.com"],
+    },
+  },
+  testnet: true,
+});
+
 export const conduitChain = defineChain({
   id: 15830,
-  name: "Conduit ETHDrive Chain",
+  name: "Conduit Drive Chain",
   iconUrl: "/logo.png",
   nativeCurrency: {
     decimals: 18,

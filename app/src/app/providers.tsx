@@ -9,7 +9,6 @@ import {
   baseSepolia,
   celoAlfajores,
   fraxtal,
-  metalL2,
   modeTestnet,
   optimismSepolia,
   sepolia,
@@ -18,7 +17,11 @@ import { WagmiProvider } from "wagmi";
 
 import { PluginsProvider } from "@/hooks/usePlugins";
 import { alchemyConfig } from "@/lib/alchemy";
-import { conduitChain, virtualChain } from "@/lib/chain";
+import { conduitChain, metalL2TestnetChain, virtualChain } from "@/lib/chain";
+
+(modeTestnet as any).iconUrl = "/logo-mode-testnet.svg";
+(celoAlfajores as any).iconUrl = "/logo-celo-alfajores.svg";
+(fraxtal as any).iconUrl = "/logo-fraxtal-mainnet.svg";
 
 export const wagmiConfig = getDefaultConfig({
   appName: "ETHDrive",
@@ -32,7 +35,7 @@ export const wagmiConfig = getDefaultConfig({
     baseSepolia,
     modeTestnet,
     celoAlfajores,
-    metalL2,
+    metalL2TestnetChain,
     fraxtal,
     conduitChain,
   ],
