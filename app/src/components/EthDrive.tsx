@@ -6,6 +6,7 @@ import {
 } from "@account-kit/react";
 import { deepHexlify } from "@alchemy/aa-core";
 import { File, Folder } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -447,7 +448,7 @@ export function EthDrive({ path }: { path?: string }) {
               />
             </div>
           </div>
-          {isConnected && (
+          {isConnected && selectedDirectory.depth >= 1 && (
             <div className="flex items-center space-x-2 mb-4">
               <Switch
                 checked={isOlnyShowConnectedDirectory}
@@ -493,25 +494,68 @@ export function EthDrive({ path }: { path?: string }) {
                 ).map((directory) => (
                   <Card
                     key={directory.path}
-                    className="flex items-center p-2 cursor-pointer w-full mb-2"
+                    className="flex items-center p-4 cursor-pointer w-full mb-2"
                     onClick={() => {
                       setSelectedDirectoryPath(directory.path);
                     }}
                     onDragOver={handleDragOver}
                     onDrop={() => handleFileDrop(directory.path)}
                   >
-                    <Folder className="h-4 w-4 mr-2" />
+                    {directory.depth == 1 && (
+                      <>
+                        {directory.path == "root/tenderly-virtual-testnet" && (
+                          <Image
+                            src="/logo-tenderly.svg"
+                            alt="logo-tenderly"
+                            width="24"
+                            height="24"
+                            className="mr-3"
+                          />
+                        )}
+                        {directory.path == "root/sepolia" && (
+                          <Image
+                            src="/logo-ethereum.svg"
+                            alt="logo-ethereum"
+                            width="24"
+                            height="24"
+                            className="mr-3"
+                          />
+                        )}
+                        {directory.path == "root/optimism-sepolia" && (
+                          <Image
+                            src="/logo-optimism.svg"
+                            alt="logo-optimism"
+                            width="24"
+                            height="24"
+                            className="mr-3"
+                          />
+                        )}
+                        {directory.path == "root/base-sepolia" && (
+                          <Image
+                            src="/logo-base.svg"
+                            alt="logo-base"
+                            width="24"
+                            height="24"
+                            className="mr-3"
+                          />
+                        )}
+                      </>
+                    )}
+
+                    {directory.depth >= 2 && (
+                      <Folder className="h-6 w-6 mr-3" />
+                    )}
                     <span>{directory.name}</span>
                   </Card>
                 ))}
                 {selectedDirectory.files.map((file, i) => (
                   <React.Fragment key={`files_${i}`}>
                     <Card
-                      className="flex items-center p-2 cursor-pointer w-full mb-2"
+                      className="flex items-center p-4 cursor-pointer w-full mb-2"
                       draggable
                       onDragStart={handleDragStart(file)}
                     >
-                      <File className="h-4 w-4 mr-2" />
+                      <File className="h-6 w-6 mr-2" />
                       {file.type == "native" && (
                         <span>{formatEther(BigInt(file.amount))} ETH</span>
                       )}

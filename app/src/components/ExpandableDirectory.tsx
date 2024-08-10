@@ -78,7 +78,7 @@ export function ExpandableDirectory({
             {directory.path == "root/tenderly-virtual-testnet" && (
               <Image
                 src="/logo-tenderly.svg"
-                alt="logo"
+                alt="logo-tenderly"
                 width="16"
                 height="16"
                 className="mr-2"
@@ -87,7 +87,7 @@ export function ExpandableDirectory({
             {directory.path == "root/sepolia" && (
               <Image
                 src="/logo-ethereum.svg"
-                alt="logo"
+                alt="logo-ethereum"
                 width="16"
                 height="16"
                 className="mr-2"
@@ -96,7 +96,7 @@ export function ExpandableDirectory({
             {directory.path == "root/optimism-sepolia" && (
               <Image
                 src="/logo-optimism.svg"
-                alt="logo"
+                alt="logo-optimism"
                 width="16"
                 height="16"
                 className="mr-2"
@@ -105,7 +105,7 @@ export function ExpandableDirectory({
             {directory.path == "root/base-sepolia" && (
               <Image
                 src="/logo-base.svg"
-                alt="logo"
+                alt="logo-base"
                 width="16"
                 height="16"
                 className="mr-2"
