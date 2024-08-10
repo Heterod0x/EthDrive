@@ -15,7 +15,7 @@ export function Sidebar({
   return (
     <>
       <div
-        className={`fixed top-0 left-0 h-full bg-white shadow-lg z-5 transition-transform transform duration-500 ${
+        className={`fixed top-0 left-0 h-full z-5 transition-transform transform duration-500 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:relative md:translate-x-0 md:w-80 border-r`}
       >

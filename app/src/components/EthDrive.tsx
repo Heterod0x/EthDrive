@@ -655,7 +655,7 @@ export function EthDrive({ path }: { path?: string }) {
                           </>
                         )}
                       </Card>
-                      <div className="bg-gray-200 p-4 rounded">
+                      <div className="bg-gray-100 p-4 rounded">
                         <p className="mb-2 font-semibold text-sm">
                           Tester Actions
                         </p>

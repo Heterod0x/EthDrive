@@ -39,7 +39,9 @@ export default function Layout({
 
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body
+        className={`${inter.className} bg-gradient-to-tr from-white via-white to-violet-100 bg-no-repeat`}
+      >
         <Providers initialState={initialState}>{children}</Providers>
       </body>
     </html>
