@@ -3,7 +3,7 @@
 import "@rainbow-me/rainbowkit";
 import { ChevronDown, ChevronRight, Folder } from "lucide-react";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { Directory } from "@/types/directory";
 
@@ -11,14 +11,25 @@ export function ExpandableDirectory({
   directory,
   onSelected,
   onFileDrop,
+  selectedDirectory,
 }: {
   directory: Directory;
   onSelected: (path: string) => void;
   onFileDrop: (directoryPath: string) => void;
+  selectedDirectory: Directory;
 }) {
   const [isExpanded, setIsExpanded] = useState(
     directory.isExpandedByDefault || false,
   );
+
+  useEffect(() => {
+    if (
+      selectedDirectory &&
+      selectedDirectory.path.startsWith(directory.path)
+    ) {
+      setIsExpanded(true);
+    }
+  }, [selectedDirectory, directory.path]);
 
   const handleExpandClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -131,6 +142,7 @@ export function ExpandableDirectory({
                 directory={subdirectory}
                 onSelected={onSelected}
                 onFileDrop={onFileDrop}
+                selectedDirectory={selectedDirectory}
               />
             ))}
         </div>

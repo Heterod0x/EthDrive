@@ -424,6 +424,7 @@ export function EthDrive({ path }: { path?: string }) {
                 setSelectedDirectoryPath(path);
               }}
               onFileDrop={handleFileDrop}
+              selectedDirectory={selectedDirectory}
             />
           </div>
           {isConnected && (
@@ -436,6 +437,7 @@ export function EthDrive({ path }: { path?: string }) {
                   setSelectedDirectoryPath(path);
                 }}
                 onFileDrop={handleFileDrop}
+                selectedDirectory={selectedDirectory}
               />
             </div>
           )}
