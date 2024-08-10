@@ -517,7 +517,7 @@ export function EthDrive({ path }: { path?: string }) {
       />
       <div className="flex flex-grow">
         <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar}>
-          <div>
+          <div className="mb-4">
             <p className="font-bold mb-2">All Directories</p>
             <ExpandableDirectory
               directory={rootDirectory}
