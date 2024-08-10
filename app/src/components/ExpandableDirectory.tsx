@@ -91,44 +91,13 @@ export function ExpandableDirectory({
           />
         )}
         {directory.depth === 1 && (
-          <>
-            {directory.path === "root/tenderly-virtual-testnet" && (
-              <Image
-                src="/logo-tenderly-virtual-testnet.svg"
-                alt="logo-tenderly-virtual-testnet"
-                width={16}
-                height={16}
-                className="mr-3"
-              />
-            )}
-            {directory.path === "root/sepolia" && (
-              <Image
-                src="/logo-sepolia.svg"
-                alt="logo-sepolia"
-                width={16}
-                height={16}
-                className="mr-3"
-              />
-            )}
-            {directory.path === "root/optimism-sepolia" && (
-              <Image
-                src="/logo-optimism-sepolia.svg"
-                alt="logo-optimism-sepolia"
-                width={16}
-                height={16}
-                className="mr-3"
-              />
-            )}
-            {directory.path === "root/base-sepolia" && (
-              <Image
-                src="/logo-base-sepolia.svg"
-                alt="logo-base-sepolia"
-                width={16}
-                height={16}
-                className="mr-3"
-              />
-            )}
-          </>
+          <Image
+            src={`/logo-${directory.path.split("/")[1]}.svg`}
+            alt={`logo-${directory.path.split("/")[1]}`}
+            width={16}
+            height={16}
+            className="mr-3"
+          />
         )}
         {directory.depth >= 2 && <Folder className="w-4 h-4 mr-3" />}
         <span
