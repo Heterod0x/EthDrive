@@ -7,11 +7,11 @@ import {
   useUser,
 } from "@account-kit/react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { ethers } from "ethers";
 import { Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAccount } from "wagmi";
+
 import { Button } from "@/components/ui/button";
 import { usePlugins } from "@/hooks/usePlugins";
 
@@ -40,15 +40,10 @@ export function Header({
         </div>
       </Link>
       <div className="flex items-center space-x-2">
-        {isConnected && (
-          <Button onClick={openCreateDirectoryDialog}>
-            <Plus className="mr-2 h-4 w-4" /> New
-          </Button>
-        )}
         <>
           {!plugins.isAccountKitEnabled && (
             <>
-              {isDirectorySelected && (
+              {isConnected && isDirectorySelected && (
                 <Button onClick={openCreateDirectoryDialog}>
                   <Plus className="mr-2 h-4 w-4" /> New
                 </Button>
