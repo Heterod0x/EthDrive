@@ -22,6 +22,7 @@ import {
   checksumAddress,
   encodeFunctionData,
   formatEther,
+  fromHex,
   parseEther,
 } from "viem";
 import {
@@ -130,19 +131,20 @@ export function EthDrive({ path }: { path?: string }) {
 
   const [actualTransction, setActualTransaction] = useState<any>();
   const [transactionType, setTransactionType] = useState<
-    "create" | "add-eth" | "add-ccip" | "move"
+    "create" | "add-eth" | "add-ccip" | "move" | "wallet-connect"
   >("create");
 
   const [destinationPath, setDestinationPath] = useState("");
 
   const handleTransactionAsDirectory = useCallback(
-    async (callData: Hex, destinationPath?: string) => {
+    async (callData: Hex, destinationPath?: any, callback?: any) => {
       if (destinationPath) {
         setDestinationPath(destinationPath);
+        setTransactionType("move");
+      } else {
+        setTransactionType("wallet-connect");
       }
-
       setTransactionStatusModalMode("preview");
-      setTransactionType("move");
       setIsTransactionStatusModalOpen(true);
       const actualTx = async () => {
         setTransactionStatusModalMode("progress");
@@ -260,6 +262,9 @@ export function EthDrive({ path }: { path?: string }) {
               setCurrentStep("confirmed");
               console.log("txHash", txHash);
               setTransactionHash(txHash);
+              if (callback) {
+                callback(txHash);
+              }
             } else {
               console.log("account abstraction is not enabled");
               await handleTransaction(account, BigInt(0), callData as Hex);
@@ -378,6 +383,9 @@ export function EthDrive({ path }: { path?: string }) {
     proposerName,
     proposerUrl,
     proposerIcon,
+    to,
+    value,
+    data,
     refresh: refreshWalletConnect,
   } = useWalletConnect(selectedDirectory, handleTransactionAsDirectory);
 
@@ -861,6 +869,37 @@ export function EthDrive({ path }: { path?: string }) {
                     </div>
                   </>
                 )}
+                {transactionType == "wallet-connect" && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-600 font-medium mb-4">
+                        Transaction Request
+                      </p>
+                      <div className="flex items-center space-x-2 mb-4">
+                        <img
+                          className="w-6 h-6"
+                          src={proposerIcon}
+                          alt="Proposer Icon"
+                        />
+                        <p className="text-sm font-medium">{proposerName}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="mb-2">
+                        <p className="text-gray-800 text-xs">To: {to}</p>
+                      </div>
+                      <div className="mb-2">
+                        <p className="text-gray-800 text-xs">
+                          Value: {formatEther(fromHex(value as Hex, "bigint"))}{" "}
+                          ETH
+                        </p>
+                      </div>
+                      <div className="mb-2">
+                        <p className="text-gray-800 text-xs">Data: {data}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
               <DialogFooter>
                 <Button
@@ -936,6 +975,37 @@ export function EthDrive({ path }: { path?: string }) {
                           width="20"
                           height="20"
                         />
+                      </div>
+                    </div>
+                  </>
+                )}
+                {transactionType == "wallet-connect" && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-600 font-medium mb-4">
+                        Transaction Request
+                      </p>
+                      <div className="flex items-center space-x-2 mb-4">
+                        <img
+                          className="w-6 h-6"
+                          src={proposerIcon}
+                          alt="Proposer Icon"
+                        />
+                        <p className="text-sm font-medium">{proposerName}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="mb-2">
+                        <p className="text-gray-800 text-xs">To: {to}</p>
+                      </div>
+                      <div className="mb-2">
+                        <p className="text-gray-800 text-xs">
+                          Value: {formatEther(fromHex(value as Hex, "bigint"))}{" "}
+                          ETH
+                        </p>
+                      </div>
+                      <div className="mb-2">
+                        <p className="text-gray-800 text-xs">Data: {data}</p>
                       </div>
                     </div>
                   </>
