@@ -15,6 +15,16 @@
         "internalType": "string",
         "name": "_actionId",
         "type": "string"
+      },
+      {
+        "internalType": "contract IPyth",
+        "name": "_pyth",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_ethUsdPriceId",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "nonpayable",
@@ -30,6 +40,63 @@
     ],
     "name": "DuplicateNullifier",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "total",
+        "type": "uint256"
+      }
+    ],
+    "name": "Deposited",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "rate",
+        "type": "uint256"
+      }
+    ],
+    "name": "EthUsdRateUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Feewithdrawn",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -291,7 +358,30 @@
     ],
     "name": "withdrawFee",
     "outputs": [],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "usdFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "pythUpdateData",
+        "type": "bytes[]"
+      }
+    ],
+    "name": "withdrawFeeInUsd",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]
