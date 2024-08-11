@@ -693,8 +693,9 @@ export function EthDrive({ path }: { path?: string }) {
                     <div className="mt-4">
                       <p className="font-bold text-sm mb-2">Tags</p>
                       <div className="flex space-x-2">
-                        {tags.map((tag) => (
+                        {tags.map((tag, i) => (
                           <Link
+                            key={`tag_${i}`}
                             href={`https://sepolia.easscan.org/attestation/view/${tag.id}`}
                             target="_blank"
                           >
