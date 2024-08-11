@@ -242,7 +242,7 @@ export function DepositManagerPlugin() {
         )}
         <div className="pt-4">
           <p className="font-medium mb-1">
-            Conduit ETH Drive chain ETH can be bridged here.
+            Conduit EthDrive chain ETH can be bridged here.
           </p>
           <Link
             href="https://superhack-test-v4369l32sl-0876b1631555927c.testnets.rollbridge.app/"

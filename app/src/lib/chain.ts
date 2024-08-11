@@ -16,7 +16,7 @@ import {
 
 export const virtualChain = defineChain({
   id: ethDriveVirtualMainnetChainId,
-  name: "Tenderly Virtual",
+  name: "Tenderly Virtual Testnet",
   iconUrl: "/logo-tenderly-virtual-testnet.svg",
   nativeCurrency: {
     decimals: 18,
@@ -50,7 +50,7 @@ export const metalL2TestnetChain = defineChain({
 
 export const conduitChain = defineChain({
   id: 15830,
-  name: "Conduit Drive Chain",
+  name: "Conduit EthDrive Chain",
   iconUrl: "/logo.png",
   nativeCurrency: {
     decimals: 18,
