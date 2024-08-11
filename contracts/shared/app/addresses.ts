@@ -1,5 +1,10 @@
 // prettier-ignore
 export const addresses = {
+  "252": {
+    "ethDrive": "0x73E5D195B5cf7EB46DE86901AD941986E74921CA",
+    "ethDrivePaymaster": "0x15e4294eA33f19828eCA2B6B2B867aBf0C2509f8",
+    "ethDriveCCIPTokenTransferor": ""
+  },
   "919": {
     "ethDrive": "0x73E5D195B5cf7EB46DE86901AD941986E74921CA",
     "ethDrivePaymaster": "0x15e4294eA33f19828eCA2B6B2B867aBf0C2509f8",

@@ -62,6 +62,11 @@ const config: HardhatUserConfig = {
       url: "https://testnet.rpc.metall2.com",
       accounts,
     },
+    "fraxtal-mainnet": {
+      chainId: 252,
+      url: "https://rpc.frax.com",
+      accounts,
+    },
     conduit: {
       url: process.env.CONDUIT_RPC,
       accounts: accounts,

@@ -73,4 +73,14 @@ export const config = {
     isAccountAbstractionEnabled: false,
     isCCIPEnabled: false,
   },
+  "252": {
+    path: "fraxtal-mainnet",
+    alchemyChainName: "",
+    alchemyGasManagerPolicyId: "",
+    alchemyGasManagerPolicyIdWithWithdraw: "",
+    exproler: "https://fraxscan.com",
+    chainlinkCCIPChainSelecter: "",
+    isAccountAbstractionEnabled: false,
+    isCCIPEnabled: false,
+  },
 };

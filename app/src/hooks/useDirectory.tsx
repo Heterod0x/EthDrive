@@ -244,6 +244,10 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     fetchAndSetDirectories("1740", "root/metal-l2-testnet");
   }, []);
 
+  useEffect(() => {
+    fetchAndSetDirectories("252", "root/fraxtal-mainnet");
+  }, []);
+
   const getFiles = useCallback(
     async (directory: Directory): Promise<File[]> => {
       const _chainId = getChainIdFromPath(directory.path);

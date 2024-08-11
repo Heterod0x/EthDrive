@@ -2,6 +2,7 @@ import { createPublicClient, defineChain, http } from "viem";
 import {
   baseSepolia,
   celoAlfajores,
+  fraxtal,
   modeTestnet,
   optimismSepolia,
   sepolia,
@@ -91,6 +92,10 @@ export const chainPublicClients = {
   }),
   "1740": createPublicClient({
     chain: metalL2TestnetChain,
+    transport: http(),
+  }),
+  "252": createPublicClient({
+    chain: fraxtal,
     transport: http(),
   }),
   "15830": createPublicClient({
