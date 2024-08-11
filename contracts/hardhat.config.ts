@@ -52,6 +52,11 @@ const config: HardhatUserConfig = {
       url: "https://sepolia.mode.network",
       accounts,
     },
+    "celo-alfajores": {
+      chainId: 44787,
+      url: "https://alfajores-forno.celo-testnet.org",
+      accounts,
+    },
     conduit: {
       url: process.env.CONDUIT_RPC,
       accounts: accounts,

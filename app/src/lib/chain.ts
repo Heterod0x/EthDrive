@@ -1,6 +1,7 @@
 import { createPublicClient, defineChain, http } from "viem";
 import {
   baseSepolia,
+  celoAlfajores,
   modeTestnet,
   optimismSepolia,
   sepolia,
@@ -82,6 +83,10 @@ export const chainPublicClients = {
   }),
   "919": createPublicClient({
     chain: modeTestnet,
+    transport: http(),
+  }),
+  "44787": createPublicClient({
+    chain: celoAlfajores,
     transport: http(),
   }),
   "15830": createPublicClient({

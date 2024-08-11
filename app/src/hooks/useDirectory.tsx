@@ -196,72 +196,48 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     }
   }, [dataBaseSepolia, loadingBaseSepolia]);
 
+  const fetchAndSetDirectories = async (chainId, rootPath) => {
+    try {
+      const createdDirectoriesFromContract = await chainPublicClients[
+        chainId
+      ].readContract({
+        abi: ethDriveAbi,
+        address: addresses[chainId].ethDrive,
+        functionName: "getCreatedDirectories",
+      });
+
+      const directoriesFromContract = formatPathesFromContract(
+        createdDirectoriesFromContract as unknown as CreatedDirectoryFromContract[],
+      );
+
+      setRootDirectory((prev) => ({
+        ...prev,
+        subdirectories: prev.subdirectories.map((chainDir) =>
+          chainDir.path === rootPath
+            ? {
+                ...chainDir,
+                subdirectories: directoriesFromContract.map((subDir) =>
+                  adjustDirectoryDepth(subDir, 2, rootPath),
+                ),
+              }
+            : chainDir,
+        ),
+      }));
+    } catch (error) {
+      console.error(`Error fetching directories for ${rootPath}:`, error);
+    }
+  };
+
   useEffect(() => {
-    (async function () {
-      try {
-        const createdDirectoriesFromContract = await chainPublicClients[
-          "9999999"
-        ].readContract({
-          abi: ethDriveAbi,
-          address: addresses["9999999"].ethDrive,
-          functionName: "getCreatedDirectories",
-        });
-        const directoriesFromContract = formatPathesFromContract(
-          createdDirectoriesFromContract as unknown as CreatedDirectoryFromContract[],
-        );
-        setRootDirectory((prev) => ({
-          ...prev,
-          subdirectories: prev.subdirectories.map((chainDir) =>
-            chainDir.path === "root/tenderly-virtual-testnet"
-              ? {
-                  ...chainDir,
-                  subdirectories: directoriesFromContract.map((subDir) =>
-                    adjustDirectoryDepth(
-                      subDir,
-                      2,
-                      "root/tenderly-virtual-testnet",
-                    ),
-                  ),
-                }
-              : chainDir,
-          ),
-        }));
-      } catch (error) {
-        console.error("Error fetching virtual directories:", error);
-      }
-    })();
+    fetchAndSetDirectories("9999999", "root/tenderly-virtual-testnet");
   }, []);
 
   useEffect(() => {
-    (async function () {
-      try {
-        const createdDirectoriesFromContract = await chainPublicClients[
-          "919"
-        ].readContract({
-          abi: ethDriveAbi,
-          address: addresses["919"].ethDrive,
-          functionName: "getCreatedDirectories",
-        });
-        const directoriesFromContract = formatPathesFromContract(
-          createdDirectoriesFromContract as unknown as CreatedDirectoryFromContract[],
-        );
-        setRootDirectory((prev) => ({
-          ...prev,
-          subdirectories: prev.subdirectories.map((chainDir) =>
-            chainDir.path === "root/mode-testnet"
-              ? {
-                  ...chainDir,
-                  subdirectories: directoriesFromContract.map((subDir) =>
-                    adjustDirectoryDepth(subDir, 2, "root/mode-testnet"),
-                  ),
-                }
-              : chainDir,
-          ),
-        }));
-      } catch (error) {
-        console.error("Error fetching mode testnet directories:", error);
-      }
-    })();
+    fetchAndSetDirectories("919", "root/mode-testnet");
+  }, []);
+
+  useEffect(() => {
+    fetchAndSetDirectories("44787", "root/celo-alfajores");
   }, []);
 
   const getFiles = useCallback(
