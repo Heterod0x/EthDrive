@@ -8,6 +8,10 @@ https://base-sepolia.blockscout.com/address/0x8FBb3479FD8C40667e01e37bd26f83c058
 
 ## Implementation Details
 
+- Drag & Drop with Account Abstraction
+
+  - https://github.com/Heterod0x/EthDrive/blob/main/app/src/hooks/useDragAndDrop.tsx#L43
+
 - Integrate Base Sepolia in UI
 
   - https://github.com/Heterod0x/EthDrive/blob/main/app/src/app/providers.tsx#L34
