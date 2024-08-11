@@ -43,4 +43,14 @@ export const config = {
     isAccountAbstractionEnabled: true,
     isCCIPEnabled: true,
   },
+  "919": {
+    path: "mode-testnet",
+    alchemyChainName: "",
+    alchemyGasManagerPolicyId: "",
+    alchemyGasManagerPolicyIdWithWithdraw: "",
+    exproler: "https://sepolia.explorer.mode.network/",
+    chainlinkCCIPChainSelecter: "829525985033418733",
+    isAccountAbstractionEnabled: false,
+    isCCIPEnabled: true,
+  },
 };

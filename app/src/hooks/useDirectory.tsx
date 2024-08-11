@@ -232,6 +232,38 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     })();
   }, []);
 
+  useEffect(() => {
+    (async function () {
+      try {
+        const createdDirectoriesFromContract = await chainPublicClients[
+          "919"
+        ].readContract({
+          abi: ethDriveAbi,
+          address: addresses["919"].ethDrive,
+          functionName: "getCreatedDirectories",
+        });
+        const directoriesFromContract = formatPathesFromContract(
+          createdDirectoriesFromContract as unknown as CreatedDirectoryFromContract[],
+        );
+        setRootDirectory((prev) => ({
+          ...prev,
+          subdirectories: prev.subdirectories.map((chainDir) =>
+            chainDir.path === "root/mode-testnet"
+              ? {
+                  ...chainDir,
+                  subdirectories: directoriesFromContract.map((subDir) =>
+                    adjustDirectoryDepth(subDir, 2, "root/mode-testnet"),
+                  ),
+                }
+              : chainDir,
+          ),
+        }));
+      } catch (error) {
+        console.error("Error fetching mode testnet directories:", error);
+      }
+    })();
+  }, []);
+
   const getFiles = useCallback(
     async (directory: Directory): Promise<File[]> => {
       const _chainId = getChainIdFromPath(directory.path);
