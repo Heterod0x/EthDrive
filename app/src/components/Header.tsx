@@ -10,7 +10,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useConnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 
@@ -26,7 +26,7 @@ export function Header({
   openCreateDirectoryDialog: () => void;
   openSettingsDialog?: () => void;
 }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const signerStatus = useSignerStatus();
   const { openAuthModal } = useAuthModal();
   const user = useUser();
@@ -34,10 +34,13 @@ export function Header({
   const { plugins, setPlugins } = usePlugins();
   const { connect, error } = useConnect();
 
+  const [hideConnectBtn, setHideConnectBtn] = useState(false);
+
   // minipay integration
   useEffect(() => {
     alert("window.ethereum.isMiniPay: " + window.ethereum.isMiniPay);
-    if (window.ethereum && window.ethereum.isMiniPay) {
+    if (window.ethereum) {
+      setHideConnectBtn(true);
       setPlugins({
         isAccountKitEnabled: false,
         isCrosschainGasSubsidiaryEnabled: false,
@@ -69,11 +72,14 @@ export function Header({
                   <Plus className="mr-2 h-4 w-4" /> New
                 </Button>
               )}
-              <ConnectButton
-                chainStatus={"icon"}
-                accountStatus={"avatar"}
-                showBalance={false}
-              />
+              {!hideConnectBtn && (
+                <ConnectButton
+                  chainStatus={"icon"}
+                  accountStatus={"avatar"}
+                  showBalance={false}
+                />
+              )}
+              {hideConnectBtn && <p className="text-xs">{address}</p>}
             </>
           )}
           {plugins.isAccountKitEnabled && (
@@ -99,9 +105,11 @@ export function Header({
             </>
           )}
         </>
-        <div className="cursor-pointer">
-          <Settings className="h-6 w-6" onClick={openSettingsDialog} />
-        </div>
+        {!hideConnectBtn && (
+          <div className="cursor-pointer">
+            <Settings className="h-6 w-6" onClick={openSettingsDialog} />
+          </div>
+        )}
       </div>
     </header>
   );
