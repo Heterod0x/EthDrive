@@ -5,7 +5,6 @@ import {
   useSmartAccountClient,
 } from "@account-kit/react";
 import { deepHexlify } from "@alchemy/aa-core";
-import { from } from "@apollo/client";
 import { File, Folder, GripVertical, PanelLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -95,6 +94,7 @@ export function EthDrive({ path }: { path?: string }) {
     selectedDirectoryChainId,
     connectedAddressDirectory,
     setSelectedDirectoryPath,
+    refreshData,
   } = useDirectory(path, connectedAddress);
 
   const {
@@ -302,9 +302,13 @@ export function EthDrive({ path }: { path?: string }) {
               setCurrentStep("confirmed");
               console.log("txHash", txHash);
               setTransactionHash(txHash);
+              setTimeout(() => {
+                refreshData();
+              }, 5000);
               if (callback) {
                 callback(txHash);
               }
+
               if (
                 selectedChainConfig.alchemyGasManagerPolicyIdWithWithdraw &&
                 plugins.isCrosschainGasSubsidiaryEnabled
@@ -440,6 +444,9 @@ export function EthDrive({ path }: { path?: string }) {
             });
             console.log("receipt", receipt);
             setCurrentStep("confirmed");
+            setTimeout(() => {
+              refreshData();
+            }, 5000);
             if (callback) {
               callback(txHash);
             }
@@ -654,6 +661,11 @@ export function EthDrive({ path }: { path?: string }) {
               />
             </div>
           </div>
+          {selectedDirectoryPath != selectedDirectory.path && (
+            <div className="fixed inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-blue-500"></div>
+            </div>
+          )}
           {selectedDirectoryPath == selectedDirectory.path && (
             <div>
               <div className="mb-8">

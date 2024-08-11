@@ -31,9 +31,9 @@ export const addresses = {
     "ethDriveCCIPTokenTransferor": ""
   },
   "11155111": {
-    "ethDrive": "0x178E93a49838D10e46ff6d8999f124965bC4178e",
-    "ethDrivePaymaster": "0xFF189E9D4165B2e300107ce158e72F3d6462633a",
-    "ethDriveCCIPTokenTransferor": ""
+    "ethDrive": "0xa4b20ad8AbC5Af7a08F3d2FF206296a0c3AFBeA7",
+    "ethDrivePaymaster": "0xB55B1d785D9a0D9A9B8f25900fae4D1E1e552f46",
+    "ethDriveCCIPTokenTransferor": "0x00e523DCD527A34Ca9Ba574d392C21e2Ca71d565"
   },
   "11155420": {
     "ethDrive": "0x60f771eFf86fED320Ba2975e85fcc2093aC290AC",

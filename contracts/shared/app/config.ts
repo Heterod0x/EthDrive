@@ -17,9 +17,9 @@ export const config = {
     alchemyGasManagerPolicyIdWithWithdraw:
       "eae153d1-971f-41bb-8858-29595dfef565",
     exproler: "https://eth-sepolia.blockscout.com",
-    chainlinkCCIPChainSelecter: "",
+    chainlinkCCIPChainSelecter: "16015286601757825753",
     isAccountAbstractionEnabled: true,
-    isCCIPEnabled: false,
+    isCCIPEnabled: true,
   },
   "11155420": {
     path: "optimism-sepolia",
