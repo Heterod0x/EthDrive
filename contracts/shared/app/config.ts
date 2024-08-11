@@ -63,4 +63,14 @@ export const config = {
     isAccountAbstractionEnabled: false,
     isCCIPEnabled: true,
   },
+  "1740": {
+    path: "metal-l2-testnet",
+    alchemyChainName: "",
+    alchemyGasManagerPolicyId: "",
+    alchemyGasManagerPolicyIdWithWithdraw: "",
+    exproler: "https://testnet.explorer.metall2.com",
+    chainlinkCCIPChainSelecter: "",
+    isAccountAbstractionEnabled: false,
+    isCCIPEnabled: false,
+  },
 };

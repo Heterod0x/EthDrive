@@ -240,6 +240,10 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     fetchAndSetDirectories("44787", "root/celo-alfajores");
   }, []);
 
+  useEffect(() => {
+    fetchAndSetDirectories("1740", "root/metal-l2-testnet");
+  }, []);
+
   const getFiles = useCallback(
     async (directory: Directory): Promise<File[]> => {
       const _chainId = getChainIdFromPath(directory.path);

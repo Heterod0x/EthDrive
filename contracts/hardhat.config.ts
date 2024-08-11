@@ -57,6 +57,11 @@ const config: HardhatUserConfig = {
       url: "https://alfajores-forno.celo-testnet.org",
       accounts,
     },
+    "metal-l2-testnet": {
+      chainId: 1740,
+      url: "https://testnet.rpc.metall2.com",
+      accounts,
+    },
     conduit: {
       url: process.env.CONDUIT_RPC,
       accounts: accounts,

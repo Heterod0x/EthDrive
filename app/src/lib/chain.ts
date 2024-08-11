@@ -89,6 +89,10 @@ export const chainPublicClients = {
     chain: celoAlfajores,
     transport: http(),
   }),
+  "1740": createPublicClient({
+    chain: metalL2TestnetChain,
+    transport: http(),
+  }),
   "15830": createPublicClient({
     chain: conduitChain,
     transport: http(),
