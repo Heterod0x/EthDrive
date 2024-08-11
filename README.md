@@ -35,8 +35,7 @@ We used Alchemy Account Kit for account abstraction and set up an extension for 
 ## Deployed Contracts for ETHDrive Application
 
 ```
-// prettier-ignore
-export const addresses = {
+{
   "252": {
     "ethDrive": "0x73E5D195B5cf7EB46DE86901AD941986E74921CA",
     "ethDrivePaymaster": "0x15e4294eA33f19828eCA2B6B2B867aBf0C2509f8",
@@ -77,8 +76,7 @@ export const addresses = {
     "ethDrivePaymaster": "0x0D261CebfDE651F6A7aE8040dF80aB3be0EB47fe",
     "ethDriveCCIPTokenTransferor": "0x79945cfcd1358311bE3c8E281CfE70AA162aB8A3"
   }
-} as const;
-
+}
 ```
 
 ## Deployed Contracts for ETHDrive Cross-chain Gas Subsidiary Chain
