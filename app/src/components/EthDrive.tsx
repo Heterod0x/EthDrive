@@ -836,7 +836,7 @@ export function EthDrive({ path }: { path?: string }) {
                                 handleDepositETH();
                               }}
                             >
-                              Add 0.001 ETH
+                              Add 0.001 Native Token
                             </Button>
                           )}
                           {!plugins.isAccountKitEnabled &&
@@ -947,7 +947,7 @@ export function EthDrive({ path }: { path?: string }) {
                 {transactionType == "add-eth" && (
                   <>
                     <p className="text-gray-600 font-medium">
-                      Add 0.001 ETH to
+                      Add 0.001 Native Token to
                     </p>
                     <p className="text-gray-800 mt-2 text-sm">
                       {selectedDirectoryPath}
@@ -1057,7 +1057,7 @@ export function EthDrive({ path }: { path?: string }) {
                 {transactionType == "add-eth" && (
                   <>
                     <p className="text-gray-600 font-medium">
-                      Add 0.001 ETH to
+                      Add 0.001 Native Token to
                     </p>
                     <p className="text-gray-800 mt-2 text-sm">
                       {selectedDirectoryPath}

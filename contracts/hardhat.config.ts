@@ -13,7 +13,7 @@ import "./tasks/depositToCCIPTokenTransferor";
 import "./tasks/depositToPaymaster";
 import "./tasks/syncWorldIdRoots";
 
-require('dotenv').config();
+require("dotenv").config();
 
 tenderly.setup({ automaticVerifications: true });
 
@@ -47,26 +47,48 @@ const config: HardhatUserConfig = {
       url: "https://sepolia.base.org",
       accounts,
     },
+    "mode-testnet": {
+      chainId: 919,
+      url: "https://sepolia.mode.network",
+      accounts,
+    },
+    "celo-alfajores": {
+      chainId: 44787,
+      url: "https://alfajores-forno.celo-testnet.org",
+      accounts,
+    },
+    "metal-l2-testnet": {
+      chainId: 1740,
+      url: "https://testnet.rpc.metall2.com",
+      accounts,
+    },
+    "fraxtal-mainnet": {
+      chainId: 252,
+      url: "https://rpc.frax.com",
+      accounts,
+    },
     conduit: {
       url: process.env.CONDUIT_RPC,
       accounts: accounts,
-    }
+    },
   },
   etherscan: {
     apiKey: {
-      "sepolia": process.env.ETHERSCAN_API_KEY!,
-      'conduit': "fake_api_key"
+      sepolia: process.env.ETHERSCAN_API_KEY!,
+      conduit: "fake_api_key",
     },
     customChains: [
       {
         network: "conduit",
         chainId: 15830,
         urls: {
-          apiURL: "https://explorer-superhack-test-v4369l32sl.t.conduit.xyz/api",
-          browserURL: "https://explorer-superhack-test-v4369l32sl.t.conduit.xyz/",
-        }
-      }
-    ]
+          apiURL:
+            "https://explorer-superhack-test-v4369l32sl.t.conduit.xyz/api",
+          browserURL:
+            "https://explorer-superhack-test-v4369l32sl.t.conduit.xyz/",
+        },
+      },
+    ],
   },
   tenderly: {
     project: "hackathon",
