@@ -4,6 +4,7 @@ import { writeContract } from "@wagmi/core";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { switchChain } from "@wagmi/core";
 import { ethers } from "ethers";
+import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useAccount, useConfig, useReadContract } from "wagmi";
 
@@ -61,8 +62,8 @@ export function DepositManagerPlugin() {
 
   const syncPromiseRef = useRef<Promise<Response> | null>(null);
   const onVerificationStart = useCallback(() => {
-    console.log('calling /api/world_id/sync');
-    
+    console.log("calling /api/world_id/sync");
+
     syncPromiseRef.current = fetch(`${baseUrl}/api/world_id/sync`, {
       method: "POST",
       headers: {
@@ -76,7 +77,7 @@ export function DepositManagerPlugin() {
       })
       .catch((err) => {
         console.error("failed to World ID roots sync", err);
-        throw new err;
+        throw new err();
       });
   }, []);
 
@@ -239,6 +240,18 @@ export function DepositManagerPlugin() {
             </div>
           </>
         )}
+        <div className="pt-4">
+          <p className="font-medium mb-1">
+            Conduit ETH Drive chain ETH can be bridged here.
+          </p>
+          <Link
+            href="https://superhack-test-v4369l32sl-0876b1631555927c.testnets.rollbridge.app/"
+            target="_blank"
+            className="underline text-sm text-blue-500"
+          >
+            https://superhack-test-v4369l32sl-0876b1631555927c.testnets.rollbridge.app/
+          </Link>
+        </div>
       </div>
     </div>
   );
