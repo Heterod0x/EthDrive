@@ -10,7 +10,9 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useAccount } from "wagmi";
+import { useEffect } from "react";
+import { useAccount, useConnect } from "wagmi";
+import { injected } from "wagmi/connectors";
 
 import { Button } from "@/components/ui/button";
 import { usePlugins } from "@/hooks/usePlugins";
@@ -24,12 +26,24 @@ export function Header({
   openCreateDirectoryDialog: () => void;
   openSettingsDialog?: () => void;
 }) {
-  const { isConnected, address } = useAccount();
+  const { isConnected } = useAccount();
   const signerStatus = useSignerStatus();
   const { openAuthModal } = useAuthModal();
   const user = useUser();
   const { logout } = useLogout();
-  const { plugins } = usePlugins();
+  const { plugins, setPlugins } = usePlugins();
+  const { connect } = useConnect();
+
+  // minipay integration
+  useEffect(() => {
+    if (window.ethereum && window.ethereum.isMiniPay) {
+      setPlugins({
+        isAccountKitEnabled: false,
+        isCrosschainGasSubsidiaryEnabled: false,
+      });
+      connect({ connector: injected({ target: "metaMask" }) });
+    }
+  }, []);
 
   return (
     <header className="flex items-center justify-between p-4 border-b">
