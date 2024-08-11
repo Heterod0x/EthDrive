@@ -1,4 +1,4 @@
-## Chainlink CCIP Integration
+# Chainlink CCIP Integration
 
 We use Chainlink CCIP to enable cross-chain asset drag-and-drop between Sepolia, Optimism Sepolia, Base Sepolia, and Mode Testnet. The cross-chain bridge is a core feature of our account and chain abstraction UX.
 

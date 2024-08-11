@@ -1,4 +1,4 @@
-## Farcaster Integration
+# Farcaster Integration
 
 We used Farcaster to make the onboarding process more accessible. Users can also create directories in EthDrive through Cast!
 
