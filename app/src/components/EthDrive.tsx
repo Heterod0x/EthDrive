@@ -710,7 +710,11 @@ export function EthDrive({ path }: { path?: string }) {
                           href="https://sepolia.easscan.org/attestation/attestWithSchema/0x00e3e054d5f8f8f81c25009189773997ba5b4e082eba3edef2d93134dda7e81a"
                           target="_blank"
                         >
-                          <Button className="rounded-full" variant="outline">
+                          <Button
+                            className="rounded-full"
+                            variant="outline"
+                            size="sm"
+                          >
                             <Plus className="h-4 w-4" />
                           </Button>
                         </Link>
