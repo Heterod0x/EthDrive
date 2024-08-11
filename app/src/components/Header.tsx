@@ -32,7 +32,7 @@ export function Header({
   const user = useUser();
   const { logout } = useLogout();
   const { plugins, setPlugins } = usePlugins();
-  const { connect } = useConnect();
+  const { connect, error } = useConnect();
 
   // minipay integration
   useEffect(() => {
@@ -45,6 +45,12 @@ export function Header({
       connect({ connector: injected() });
     }
   }, [connect]);
+
+  useEffect(() => {
+    if (error) {
+      alert("Error: " + error.message);
+    }
+  }, [error]);
 
   return (
     <header className="flex items-center justify-between p-4 border-b">
