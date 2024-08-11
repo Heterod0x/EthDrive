@@ -36,14 +36,15 @@ export function Header({
 
   // minipay integration
   useEffect(() => {
+    alert("window.ethereum.isMiniPay: " + window.ethereum.isMiniPay);
     if (window.ethereum && window.ethereum.isMiniPay) {
       setPlugins({
         isAccountKitEnabled: false,
         isCrosschainGasSubsidiaryEnabled: false,
       });
-      connect({ connector: injected({ target: "metaMask" }) });
+      connect({ connector: injected() });
     }
-  }, []);
+  }, [connect]);
 
   return (
     <header className="flex items-center justify-between p-4 border-b">
