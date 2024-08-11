@@ -580,7 +580,6 @@ export function EthDrive({ path }: { path?: string }) {
     connectedAddress,
     selectedDirectory.tokenBoundAccount as Address,
   );
-  console.log("tags", tags);
 
   return (
     <div className="flex flex-col h-screen">

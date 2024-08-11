@@ -11,6 +11,7 @@ import { Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { FaGithub, FaSquareXTwitter } from "react-icons/fa6";
 import { useAccount, useConnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 
@@ -74,7 +75,15 @@ export function Header({
           <h1 className="hidden lg:block text-2xl font-semibold">EthDrive</h1>
         </div>
       </Link>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-3">
+        <div className="flex space-x-3 items-center mr-4">
+          <Link href="https://x.com/0xethdrive" target="_blank">
+            <FaSquareXTwitter size="20" />
+          </Link>
+          <Link href="https://github.com/Heterod0x/EthDrive" target="_blank">
+            <FaGithub size="20" />
+          </Link>
+        </div>
         <>
           {!plugins.isAccountKitEnabled && (
             <>
