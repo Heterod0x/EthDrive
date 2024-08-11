@@ -12,11 +12,13 @@ Additionally, we integrated a custom cross-chain gas subsidy mechanism as an ext
 
 ## Implementation References
 
-Custom hook implementation
-https://github.com/Heterod0x/EthDrive/blob/main/app/src/hooks/useSmartAccount.tsx
+- Custom hook implementation
 
-Building & Sending user operation
-https://github.com/Heterod0x/EthDrive/blob/main/app/src/components/EthDrive.tsx#L378
+  - https://github.com/Heterod0x/EthDrive/blob/main/app/src/hooks/useSmartAccount.tsx
 
-Cross-chain gas subsidy mechanism with Gas Manager
-https://github.com/Heterod0x/EthDrive/blob/main/app/src/app/actions/integrate-alchemy-and-eth-drive-chain.ts
+- Building & Sending user operation
+
+  - https://github.com/Heterod0x/EthDrive/blob/main/app/src/components/EthDrive.tsx#L378
+
+- Cross-chain gas subsidy mechanism with Gas Manager
+  - https://github.com/Heterod0x/EthDrive/blob/main/app/src/app/actions/integrate-alchemy-and-eth-drive-chain.ts
