@@ -26,6 +26,10 @@ We successfully tested a transaction using Minipay.
 
 ## Deployed Contracts
 
+- EthDrive
+
+  - https://alfajores.celoscan.io/address/0x73E5D195B5cf7EB46DE86901AD941986E74921CA
+
 ## Implementation References
 
 - Minipay integration
