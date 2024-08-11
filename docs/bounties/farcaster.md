@@ -4,15 +4,15 @@ We used Farcaster to make the onboarding process more accessible. Users can also
 
 ## Screenshots
 
-![1](../farcaster-integration-test/cast-1.png)
+![1](./farcaster-integration-test/cast-1.png)
 
 To enhance the mobile user experience, we focused on improving the UX, including adding a sidebar.
 
-![2](../farcaster-integration-test/cast-2.png)
+![2](./farcaster-integration-test/cast-2.png)
 
 We successfully tested a transaction using Minipay.
 
-![3](../farcaster-integration-test/cast-3.png)
+![3](./farcaster-integration-test/cast-3.png)
 
 ## Implementation Reference
 
