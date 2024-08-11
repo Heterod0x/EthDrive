@@ -1,7 +1,7 @@
 "use server";
 
 import { kv } from "@vercel/kv";
-import { Address, fromHex } from "viem";
+import { Address, fromHex, parseEther } from "viem";
 
 import { request as alchemyRequest } from "@/lib/alchemy";
 import { chainPublicClients } from "@/lib/chain";
@@ -158,9 +158,26 @@ export const withdrawIfUserOperationIsFundedInAlchemy = async (
   if (getUserOperationReceipt.error) {
     throw new Error(getUserOperationReceipt.error.message);
   }
-  const feeBn =
-    fromHex(getUserOperationReceipt.result.receipt.gasUsed, "bigint") *
-    fromHex(getUserOperationReceipt.result.receipt.effectiveGasPrice, "bigint");
+  // matched.confirmedTotalUsd = 1; // to enable Pyth integration
+  console.log("matched.confirmedTotalUsd", matched.confirmedTotalUsd);
+  let fee;
+  let currency;
+  // Currently Alchemy API returns 0 for confirmedTotalUsd, if testnet
+  // But in mainnet, it can be used to calculate fee by converting USD -> ETH in Pyth
+  if (matched.confirmedTotalUsd > 0) {
+    const feeBn = parseEther(matched.confirmedTotalUsd.toString());
+    fee = feeBn.toString();
+    currency = "usd";
+  } else {
+    const feeBn =
+      fromHex(getUserOperationReceipt.result.receipt.gasUsed, "bigint") *
+      fromHex(
+        getUserOperationReceipt.result.receipt.effectiveGasPrice,
+        "bigint",
+      );
+    fee = feeBn.toString();
+    currency = "eth";
+  }
   const response = await fetch(`${baseUrl}/api/world_id/withdraw`, {
     method: "POST",
     headers: {
@@ -168,12 +185,13 @@ export const withdrawIfUserOperationIsFundedInAlchemy = async (
     },
     body: JSON.stringify({
       account: signer,
-      fee: feeBn.toString(),
-      // TODO: add currency here for USD (eth/usd)
+      fee,
+      currency,
     }),
   });
   const data = await response.json();
   if (!data.ok) {
+    console.log("data", data);
     throw new Error("Failed to withdraw");
   }
   await kv.set(uoHash, true);
