@@ -5,7 +5,7 @@ import {
   useSmartAccountClient,
 } from "@account-kit/react";
 import { deepHexlify } from "@alchemy/aa-core";
-import { File, Folder, GripVertical, PanelLeft } from "lucide-react";
+import { File, Folder, GripVertical, PanelLeft, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -30,6 +30,7 @@ import {
   withdrawIfUserOperationIsFundedInAlchemy,
 } from "@/app/actions/integrate-alchemy-and-eth-drive-chain";
 import { ExpandableDirectory } from "@/components/ExpandableDirectory";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -47,6 +48,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { useDragAndDrop } from "@/hooks/useDragAndDrop";
 import { usePlugins } from "@/hooks/usePlugins";
 import { useSmartAccount } from "@/hooks/useSmartAccount";
+import { useTags } from "@/hooks/useTags";
 import { useTransactionStatus } from "@/hooks/useTransactionStatus";
 import { useWalletConnect } from "@/hooks/useWalletConnect";
 import { alchemySepoliaChain, request as requestAlchemy } from "@/lib/alchemy";
@@ -593,6 +595,13 @@ export function EthDrive({ path }: { path?: string }) {
     setOwners(updatedOwners);
   };
 
+  const { tags } = useTags(
+    selectedDirectoryChainId,
+    connectedAddress,
+    selectedDirectory.tokenBoundAccount as Address,
+  );
+  console.log("tags", tags);
+
   return (
     <div className="flex flex-col h-screen">
       <Header
@@ -668,33 +677,67 @@ export function EthDrive({ path }: { path?: string }) {
           )}
           {selectedDirectoryPath == selectedDirectory.path && (
             <div>
-              <div className="mb-8">
-                {selectedDirectory.tokenBoundAccount && (
-                  <>
-                    <p className="font-bold mb-2">Token Bound Account</p>
-                    <div className="flex items-center">
-                      <p className="text-xs text-gray-600">
-                        {checksumAddress(
-                          selectedDirectory.tokenBoundAccount as Address,
-                        )}
-                      </p>
-                      <CopyToClipboard
-                        text={selectedDirectory.tokenBoundAccount}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-              {selectedDirectory.holder && (
-                <div className="mb-8">
-                  <p className="font-bold mb-2">Owners</p>
-                  <div className="flex items-center">
-                    <p className="text-xs text-gray-600">
-                      {checksumAddress(selectedDirectory.holder as Address)}
-                    </p>
-                    <CopyToClipboard text={selectedDirectory.holder} />
+              {selectedDirectory.depth >= 2 && (
+                <Card className="p-4 mb-8">
+                  <div className="mb-4">
+                    {selectedDirectory.tokenBoundAccount && (
+                      <>
+                        <p className="font-bold text-sm mb-2">
+                          Token Bound Account
+                        </p>
+                        <div className="flex items-center">
+                          <p className="text-xs text-gray-600">
+                            {checksumAddress(
+                              selectedDirectory.tokenBoundAccount as Address,
+                            )}
+                          </p>
+                          <CopyToClipboard
+                            text={selectedDirectory.tokenBoundAccount}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
-                </div>
+                  {selectedDirectory.holder && (
+                    <div>
+                      <p className="font-bold text-sm mb-2">Owner</p>
+                      <div className="flex items-center">
+                        <p className="text-xs text-gray-600">
+                          {checksumAddress(selectedDirectory.holder as Address)}
+                        </p>
+                        <CopyToClipboard text={selectedDirectory.holder} />
+                      </div>
+                    </div>
+                  )}
+                  {selectedDirectoryChainId == 11155111 && (
+                    <div className="mt-4">
+                      <p className="font-bold text-sm mb-2">Tags</p>
+                      <div className="flex space-x-2">
+                        {tags.map((tag) => (
+                          <Link
+                            href={`https://sepolia.easscan.org/attestation/view/${tag.id}`}
+                            target="_blank"
+                          >
+                            <Badge
+                              variant="outline"
+                              className="w-full h-full hover:bg-accent hover:text-accent-foreground"
+                            >
+                              {tag.value}
+                            </Badge>
+                          </Link>
+                        ))}
+                        <Link
+                          href="https://sepolia.easscan.org/attestation/attestWithSchema/0x00e3e054d5f8f8f81c25009189773997ba5b4e082eba3edef2d93134dda7e81a"
+                          target="_blank"
+                        >
+                          <Button className="rounded-full" variant="outline">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </Card>
               )}
               {selectedDirectory.subdirectories.length > 0 && (
                 <p className="font-bold mb-2">Directories</p>
