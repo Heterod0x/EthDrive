@@ -34,12 +34,12 @@ export function Header({
   const { plugins, setPlugins } = usePlugins();
   const { connect, error } = useConnect();
 
-  const [hideConnectBtn, setHideConnectBtn] = useState(false);
+  const [hideConnectBtn, setHideConnectBtn] = useState(false); // use this to handle minipay mode
+  const [copied, setCopied] = useState(false);
 
-  // minipay integration
+  // minipay integration start
   useEffect(() => {
-    alert("window.ethereum.isMiniPay: " + window.ethereum.isMiniPay);
-    if (window.ethereum) {
+    if (window.ethereum && window.ethereum.isMiniPay) {
       setHideConnectBtn(true);
       setPlugins({
         isAccountKitEnabled: false,
@@ -54,6 +54,17 @@ export function Header({
       alert("Error: " + error.message);
     }
   }, [error]);
+
+  const truncate = (str: string, n: number) => {
+    return str.length > n ? str.substr(0, n - 1) + "..." : str;
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(address || "");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  // minipay integration end
 
   return (
     <header className="flex items-center justify-between p-4 border-b">
@@ -79,7 +90,11 @@ export function Header({
                   showBalance={false}
                 />
               )}
-              {hideConnectBtn && <p className="text-xs">{address}</p>}
+              {hideConnectBtn && (
+                <Button variant={"outline"} onClick={handleCopy}>
+                  {copied ? "Copied!" : address ? truncate(address, 10) : ""}
+                </Button>
+              )}
             </>
           )}
           {plugins.isAccountKitEnabled && (
