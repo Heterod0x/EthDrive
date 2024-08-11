@@ -17,7 +17,7 @@ import { ethDriveAbi } from "../../../contracts/shared/app/abi";
 import { addresses } from "../../../contracts/shared/app/addresses";
 import { config } from "../../../contracts/shared/app/config";
 import { ccipBnMAbi } from "../../../contracts/shared/app/external-abi";
-import { isChainId } from "../../../contracts/shared/app/types";
+import { ChainId, isChainId } from "../../../contracts/shared/app/types";
 import {
   chainlinkCCIPBnMAddresses,
   sepoliaWETHAddress,
@@ -196,7 +196,7 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     }
   }, [dataBaseSepolia, loadingBaseSepolia]);
 
-  const fetchAndSetDirectories = async (chainId, rootPath) => {
+  const fetchAndSetDirectories = async (chainId: ChainId, rootPath: string) => {
     try {
       const createdDirectoriesFromContract = await chainPublicClients[
         chainId
