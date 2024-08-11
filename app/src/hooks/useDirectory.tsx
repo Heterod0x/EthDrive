@@ -108,7 +108,11 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
   const [selectedDirectory, setSelectedDirectory] =
     useState<Directory>(rootDirectory);
 
-  const { data: dataSepolia, loading: loadingSepolia } = useQuery(
+  const {
+    data: dataSepolia,
+    loading: loadingSepolia,
+    refetch: refetchSepolia,
+  } = useQuery(
     gql`
       ${buildRecursiveDirectoryQuery(MAX_DIRECTORY_DEPTH)}
     `,
@@ -117,17 +121,24 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     },
   );
 
-  const { data: dataOptimismSepolia, loading: loadingOptimismSepolia } =
-    useQuery(
-      gql`
-        ${buildRecursiveDirectoryQuery(MAX_DIRECTORY_DEPTH)}
-      `,
-      {
-        client: optimismSepoliaClient,
-      },
-    );
+  const {
+    data: dataOptimismSepolia,
+    loading: loadingOptimismSepolia,
+    refetch: refetchOptimismSepolia,
+  } = useQuery(
+    gql`
+      ${buildRecursiveDirectoryQuery(MAX_DIRECTORY_DEPTH)}
+    `,
+    {
+      client: optimismSepoliaClient,
+    },
+  );
 
-  const { data: dataBaseSepolia, loading: loadingBaseSepolia } = useQuery(
+  const {
+    data: dataBaseSepolia,
+    loading: loadingBaseSepolia,
+    refetch: refetchBaseSepolia,
+  } = useQuery(
     gql`
       ${buildRecursiveDirectoryQuery(MAX_DIRECTORY_DEPTH)}
     `,
@@ -230,21 +241,20 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
 
   useEffect(() => {
     fetchAndSetDirectories("9999999", "root/tenderly-virtual-testnet");
-  }, []);
-
-  useEffect(() => {
     fetchAndSetDirectories("919", "root/mode-testnet");
-  }, []);
-
-  useEffect(() => {
     fetchAndSetDirectories("44787", "root/celo-alfajores");
-  }, []);
-
-  useEffect(() => {
     fetchAndSetDirectories("1740", "root/metal-l2-testnet");
+    fetchAndSetDirectories("252", "root/fraxtal-mainnet");
   }, []);
 
-  useEffect(() => {
+  const refreshData = useCallback(() => {
+    refetchSepolia();
+    refetchOptimismSepolia();
+    refetchBaseSepolia();
+    fetchAndSetDirectories("9999999", "root/tenderly-virtual-testnet");
+    fetchAndSetDirectories("919", "root/mode-testnet");
+    fetchAndSetDirectories("44787", "root/celo-alfajores");
+    fetchAndSetDirectories("1740", "root/metal-l2-testnet");
     fetchAndSetDirectories("252", "root/fraxtal-mainnet");
   }, []);
 
@@ -360,6 +370,14 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     };
   }, [rootDirectory, connectedAddress]);
 
+  // This is to auto refresh, it is disqbled for now to recude the number of requests
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     refreshData();
+  //   }, 60000); // 60,000 ms = 1 minutes
+  //   return () => clearInterval(intervalId); // Cleanup on unmount
+  // }, [refreshData]);
+
   return {
     rootDirectory,
     selectedDirectory,
@@ -367,5 +385,6 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     selectedDirectoryChainId,
     connectedAddressDirectory,
     setSelectedDirectoryPath,
+    refreshData,
   };
 }

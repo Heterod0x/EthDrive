@@ -95,6 +95,7 @@ export function EthDrive({ path }: { path?: string }) {
     selectedDirectoryChainId,
     connectedAddressDirectory,
     setSelectedDirectoryPath,
+    refreshData,
   } = useDirectory(path, connectedAddress);
 
   const {
@@ -302,9 +303,13 @@ export function EthDrive({ path }: { path?: string }) {
               setCurrentStep("confirmed");
               console.log("txHash", txHash);
               setTransactionHash(txHash);
+              setTimeout(() => {
+                refreshData();
+              }, 5000);
               if (callback) {
                 callback(txHash);
               }
+
               if (
                 selectedChainConfig.alchemyGasManagerPolicyIdWithWithdraw &&
                 plugins.isCrosschainGasSubsidiaryEnabled
@@ -440,6 +445,9 @@ export function EthDrive({ path }: { path?: string }) {
             });
             console.log("receipt", receipt);
             setCurrentStep("confirmed");
+            setTimeout(() => {
+              refreshData();
+            }, 5000);
             if (callback) {
               callback(txHash);
             }
