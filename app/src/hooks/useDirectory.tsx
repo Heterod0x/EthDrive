@@ -44,13 +44,6 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
     name: "root",
     subdirectories: [
       {
-        path: "root/tenderly-virtual-testnet",
-        name: "tenderly-virtual-testnet",
-        subdirectories: [],
-        depth: 1,
-        files: [],
-      },
-      {
         path: "root/sepolia",
         name: "sepolia",
         subdirectories: [],
@@ -95,6 +88,13 @@ export function useDirectory(path = "root", connectedAddress?: Address) {
       {
         path: "root/fraxtal-mainnet",
         name: "fraxtal-mainnet",
+        subdirectories: [],
+        depth: 1,
+        files: [],
+      },
+      {
+        path: "root/tenderly-virtual-testnet",
+        name: "tenderly-virtual-testnet",
         subdirectories: [],
         depth: 1,
         files: [],
